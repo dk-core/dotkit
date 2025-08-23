@@ -75,4 +75,4 @@ first step is making the dk cli\
 then i need to make an initial dotfile template, most likely a hyprland one\
 i plan to migrate other successful dotfiles to dotkit, with as much feature parity as possible
 
-you can follow [todo](TODO.md) to get a grasp of my goals and progress for this project
+you can follow [todo](todo.md) to get a grasp of my goals and progress for this project
