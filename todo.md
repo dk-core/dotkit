@@ -1,6 +1,6 @@
 <img src="https://www.dotkit.app/dk-logo.svg" width="70" align="right">
 
-# dotkit progress 
+# dotkit progress
 
 - [dotkit progress](#dotkit-progress)
   - [status](#status)
@@ -127,7 +127,7 @@
          - set `dk.rofi.start.sh` to `dk.wofi.start.sh` in `~/.local/share/dk/(profiles/themes)/(my-profile/my-theme)/lib/dk.rofi.start.sh`
 
 2. **namespaced dotfiles system**
-   - dotfiles system will 
+   - dotfiles system will
 
 3. **namespaced theme system**
    - theme system will be namespaced to allow for easier extension of dk.
@@ -203,34 +203,342 @@ additionally, users need to have checks and balances to ensure dk is working as 
 
 - [ ] lib, helper functions
   - [ ] safe symlink function
+
+    ```bash
+    dk_safe_symlink() {
+      # takes a hashmap of source -> target
+      # checks if any paths are outside of $XDG_CONFIG_HOME, failes with exit 1 - "dk ln is not permitted to write outside of $XDG_CONFIG_HOME"
+      # checks if any sources don't exist, and exits with 1 - "sources []source do not exist"
+      # checks if any targets are files, and if so uses gum to print a warning with the full list of files
+      # checks if any targets are symlinks, and if so uses gum to print a prompt to overwrite
+      # if no on prompt, exit with 125 - "dk ln safely exited. please manually backup files[]"
+      # if yes on prompt, symlink with ln -sfn
+      # use dk_log, dk_error, dk_debug, dk_warn for logging
+      # use gum for pretty printing and prompts
+    }
+    ```
+
   - [ ] logging functions
+
+    ```bash
+    dk_log() { logger -t dk "$*"; }
+    dk_error() { logger -p user.err -t dk "ERROR: $*"; }
+    dk_debug() { [[ $DK_DEBUG ]] && logger -t dk "DEBUG: $*"; }
+    dk_warn() { logger -p user.warning -t dk "WARN: $*"; }
+    ```
+
   - [ ] printing functions
+
+    ```bash
+    dk_print() { echo "[dk] $*"; }
+    dk_status() { echo "[dk] status: $*"; }
+    dk_success() { echo "[dk] ✓ $*"; }
+    dk_fail() { echo "[dk] ✗ $*" >&2; }
+    ```
+
   - [ ] status script
     - [ ] small version print
+
+      ```bash
+      dk_version() {
+        echo "dotkit v$(cat $DK_ROOT/VERSION)"
+      }
+      ```
+
     - [ ] shows current dotfile
+
+      ```bash
+      dk_current_dotfile() {
+        readlink "$HOME/.local/share/dk/current/dotfile" | basename
+      }
+      ```
+
     - [ ] shows current profile
+
+      ```bash
+      dk_current_profile() {
+        readlink "$HOME/.local/share/dk/current/profile" | basename
+      }
+      ```
+
     - [ ] shows current theme
+
+      ```bash
+      dk_current_theme() {
+        readlink "$HOME/.local/share/dk/current/theme" | basename
+      }
+      ```
+
     - [ ] shows symlink status of dotfiles shorthand
+
+      ```bash
+      dk_symlink_status() {
+        # check ~/.config/* symlinks
+        # show broken/missing/valid status
+        # colorized output
+      }
+      ```
+
     - [ ] minified error output if any
+
+      ```bash
+      dk_errors() {
+        journalctl --user -t dk -p err --since "1 hour ago" --no-pager -q
+      }
+      ```
+
     - [ ] disclaimer for dotfiles & themes
+
+      ```bash
+      dk_disclaimer() {
+        echo "dotfile: $(dk_current_dotfile)"
+        echo "theme: $(dk_current_theme)"
+        echo "profile: $(dk_current_profile)"
+      }
+      ```
+
     - [ ] dotfile/theme status --diff for showing diffable view that can be compared to default dotfile/theme
+
+      ```bash
+      dk_status_diff() {
+        # compare current config with default
+        # show only differences
+        # machine readable format
+      }
+      ```
+
   - [ ] tools for dotfile maintainers
     - [ ] dotfile/theme installation
+
+      ```bash
+      dk_install_dotfile() {
+        local dotfile_path="$1"
+        # validate dotfile structure
+        # run dk.dotfile.install.sh if present
+        # setup symlinks
+      }
+      ```
+
     - [ ] set dotfile/theme
+
+      ```bash
+      dk_set_dotfile() {
+        local dotfile_name="$1"
+        # update current/dotfile symlink
+        # run dk.dotfile.set.sh
+        # reload configs
+      }
+      ```
+
     - [ ] update dotfile/theme
+
+      ```bash
+      dk_update_dotfile() {
+        # git pull or download updates
+        # run migration scripts
+        # preserve user customizations
+      }
+      ```
+
     - [ ] migration tool
+
+      ```bash
+      dk_migrate() {
+        local from_version="$1" to_version="$2"
+        # backup current config
+        # run version-specific migration scripts
+        # validate migration success
+      }
+      ```
+
     - [ ] supported systems
+
+      ```bash
+      dk_check_system() {
+        # detect os, desktop environment
+        # check required dependencies
+        # return compatibility status
+      }
+      ```
+
     - [ ] supported package managers
+      - [ ] cross-distro package management
+        - [ ] leverage existing tools: use `command -v` for detection, `/etc/os-release` for distro id
+
+          ```bash
+          dk_distro() {
+            source /etc/os-release
+            echo "$ID"
+          }
+          ```
+
+        - [ ] minimal dk helpers: `dk_distro()` returns id, `dk_has_cmd()` checks package managers
+
+          ```bash
+          dk_has_cmd() {
+            command -v "$1" >/dev/null 2>&1
+          }
+          
+          dk_package_manager() {
+            if dk_has_cmd pacman; then echo "pacman"
+            elif dk_has_cmd apt; then echo "apt"
+            elif dk_has_cmd dnf; then echo "dnf"
+            elif dk_has_cmd zypper; then echo "zypper"
+            else echo "unknown"; fi
+          }
+          ```
+
+        - [ ] dotfile maintainers handle mapping: they provide distro-specific package lists in install scripts
+
+          ```bash
+          # in dotfile's dk.dotfile.install.sh:
+          case "$(dk_distro)" in
+            arch) packages="hyprland waybar rofi" ;;
+            ubuntu) packages="hyprland waybar rofi-wayland" ;;
+            fedora) packages="hyprland waybar rofi" ;;
+          esac
+          ```
+
+        - [ ] universal package managers: support nix, flatpak, brew as fallbacks
+
+          ```bash
+          dk_install_universal() {
+            local package="$1"
+            if dk_has_cmd nix; then nix-env -iA "$package"
+            elif dk_has_cmd flatpak; then flatpak install "$package"
+            elif dk_has_cmd brew; then brew install "$package"
+            fi
+          }
+          ```
+
+        - [ ] simple integration: `dk install` runs dotfile's `dk.dotfile.install.sh` if present
+
+          ```bash
+          dk_install() {
+            local install_script="$DK_CURRENT/dotfile/lib/dk.dotfile.install.sh"
+            [[ -x "$install_script" ]] && "$install_script"
+          }
+          ```
+
     - [ ] supported desktop environments
+
+      ```bash
+      dk_desktop_environment() {
+        echo "${XDG_CURRENT_DESKTOP:-unknown}"
+      }
+      ```
+
     - [ ] get user packages
+
+      ```bash
+      dk_user_packages() {
+        case "$(dk_package_manager)" in
+          pacman) pacman -Qqe ;;
+          apt) apt list --installed ;;
+          dnf) dnf list installed ;;
+        esac
+      }
+      ```
+
 - [ ] "current" system
+
+  ```bash
+  # ~/.local/share/dk/current/ structure management
+  dk_current_init() {
+    mkdir -p "$HOME/.local/share/dk/current"
+    # create symlinks to active dotfile/theme/profile
+  }
+  
+  dk_current_switch() {
+    local type="$1" name="$2"  # dotfile/theme/profile
+    # update symlink atomically
+    # trigger reload hooks
+  }
+  ```
+
 - [ ] namespace hook system
+
+  ```bash
+  # script loading hierarchy: dk -> dotfile -> theme -> profile
+  dk_load_hooks() {
+    local namespace="$1" action="$2"  # e.g. "waybar" "start"
+    
+    # search path in order
+    for path in "$DK_LIB" "$DK_CURRENT/dotfile/lib" "$DK_CURRENT/theme/lib" "$DK_CURRENT/profile/lib"; do
+      local script="$path/dk.$namespace.$action.sh"
+      [[ -x "$script" ]] && { exec "$script"; return; }
+    done
+  }
+  ```
+
 - [ ] dotfile layer
+
+  ```bash
+  # dotfile management and symlink creation
+  dk_dotfile_apply() {
+    local dotfile="$1"
+    # symlink configs to ~/.config/
+    # run dk.dotfile.set.sh
+    # update current/dotfile pointer
+  }
+  
+  dk_dotfile_list() {
+    ls "$HOME/.local/share/dk/dotfiles/"
+  }
+  ```
+
 - [ ] theme layer
+
+  ```bash
+  # theme system with wallpaper and styling
+  dk_theme_apply() {
+    local theme="$1"
+    # run dk.theme.set.sh
+    # update wallpaper
+    # apply gtk/qt themes
+  }
+  
+  dk_theme_wallpaper() {
+    local wallpaper="$1"
+    # set wallpaper via backend
+    # update current/wallpaper
+  }
+  ```
+
 - [ ] profile layer
+
+  ```bash
+  # user customization layer on top of themes
+  dk_profile_apply() {
+    local profile="$1"
+    # run dk.profile.set.sh
+    # override theme settings
+    # custom app configurations
+  }
+  
+  dk_profile_create() {
+    local name="$1"
+    mkdir -p "$HOME/.local/share/dk/profiles/$name/lib"
+  }
+  ```
+
 - [ ] status script
 
+  ```bash
+  dk_status() {
+    dk_version
+    echo "dotfile: $(dk_current_dotfile)"
+    echo "theme: $(dk_current_theme)"
+    echo "profile: $(dk_current_profile)"
+    dk_symlink_status
+    dk_errors
+  }
+  ```
+
 ### configuration, init - 30%
+
+- [ ] setup dkvm for dev
+  - [ ] quickemu??
 
 - [ ] hyprland config
 - [ ] waybar config
@@ -241,9 +549,6 @@ additionally, users need to have checks and balances to ensure dk is working as 
 - [ ] icons
 - [ ] cursor
 - [ ] qt theme
-
-- [ ] setup dknix vm within this repo
-  - only for faster testing. just nixos packages no envs no home-manager, and copied files to play with
 
 - hand feed dk configuration till its stable using new model
   - [ ] shell
@@ -262,7 +567,7 @@ additionally, users need to have checks and balances to ensure dk is working as 
 ### install script 50%
 
 - [ ] install script for dotfiles, using the template
-- [ ] update dkvm for new install script
+- [ ] create dkvm
 - [ ] test install on bare metal
 
 ### testing, lots of testing 60%

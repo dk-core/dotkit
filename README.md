@@ -2,7 +2,7 @@
 
 # dotkit 
 
-[![License](https://img.shields.io/badge/license-MIT-14b8a6.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-f59e42.svg?style=flat-square)](LICENSE)
 
 > [!CAUTION]
 > dotkit is still in early development, and is not yet ready for use.
