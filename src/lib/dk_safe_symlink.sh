@@ -53,8 +53,22 @@ dk_safe_symlink() {
             resolved_target="$(pwd)/$target"
         fi
         
-        # Normalize path (remove .., ., etc.)
-        resolved_target="$(realpath -m "$resolved_target")"
+        # Normalize path (remove .., ., etc.) without following symlinks
+        # Use a custom normalization that doesn't follow existing symlinks
+        local target_dir
+        target_dir="$(dirname "$resolved_target")"
+        local target_name
+        target_name="$(basename "$resolved_target")"
+        
+        # Normalize the directory path (this is safe even if it doesn't exist)
+        if [[ -d "$target_dir" ]]; then
+            target_dir="$(cd "$target_dir" && pwd)"
+        else
+            # For non-existent directories, use realpath -m on the directory part
+            target_dir="$(realpath -m "$target_dir")"
+        fi
+        
+        resolved_target="$target_dir/$target_name"
         
         # Check if target is within config_home
         if [[ "$resolved_target" != "$config_home"* ]]; then
@@ -75,8 +89,7 @@ dk_safe_symlink() {
     done
     
     if [[ ${#missing_sources[@]} -gt 0 ]]; then
-        dk_error "Missing source files: ${missing_sources[*]}"
-        dk_fail "Sources [${missing_sources[*]}] do not exist"
+        dk_error_list "Missing source files" "${missing_sources[@]}"
         return 1
     fi
     
@@ -92,36 +105,23 @@ dk_safe_symlink() {
     done
     
     # Handle file conflicts with user prompt
+    # File conflicts will cause dk to fail and prompt user to backup manually
     if [[ ${#conflicting_files[@]} -gt 0 ]]; then
-        dk_warn "The following files will be overwritten:"
-        printf '  %s\n' "${conflicting_files[@]}"
-        
-        if command -v gum >/dev/null 2>&1; then
-            if ! gum confirm "Overwrite these files?"; then
-                dk_log "User declined to overwrite files: ${conflicting_files[*]}"
-                dk_fail "dk ln safely exited. Please manually backup files [${conflicting_files[*]}]"
-                return 125
-            fi
-        else
-            # Fallback to read if gum is not available
-            echo -n "Overwrite these files? [y/N]: " >&2
-            read -r response </dev/tty 2>/dev/null || read -r response
-            if [[ ! "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-                dk_log "User declined to overwrite files: ${conflicting_files[*]}"
-                dk_fail "dk ln safely exited. Please manually backup files [${conflicting_files[*]}]"
-                return 125
-            fi
-        fi
+        dk_error_list "The following files would be overwritten (operation aborted):" "${conflicting_files[@]}"
+        dk_fail "dk ln safely exited. Please manually backup these files before proceeding."
+        return 1
     fi
     
     # Handle symlink conflicts with user prompt
     if [[ ${#conflicting_symlinks[@]} -gt 0 ]]; then
-        dk_warn "The following symlinks will be overwritten:"
+        local -a symlink_descriptions=()
         for symlink in "${conflicting_symlinks[@]}"; do
             local link_target
             link_target="$(readlink "$symlink" 2>/dev/null || echo "broken")"
-            printf '  %s -> %s\n' "$symlink" "$link_target"
+            symlink_descriptions+=("$symlink -> $link_target")
         done
+        
+        dk_warn_list "The following symlinks will be overwritten" "${symlink_descriptions[@]}"
         
         if command -v gum >/dev/null 2>&1; then
             if ! gum confirm "Overwrite these symlinks?"; then

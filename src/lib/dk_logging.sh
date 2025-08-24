@@ -31,9 +31,84 @@ dk_status() {
 }
 
 dk_success() { 
-    echo "[dk] ✓ $*"
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground 2 "[dk] ✓ $*"
+    else
+        echo "[dk] ✓ $*"
+    fi
 }
 
 dk_fail() { 
-    echo "[dk] ✗ $*" >&2
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground 1 "[dk] ✗ $*" >&2
+    else
+        echo "[dk] ✗ $*" >&2
+    fi
+}
+
+# Pretty print arrays as lists
+dk_print_list() {
+    local title="$1"
+    shift
+    local items=("$@")
+    
+    if [[ ${#items[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    if command -v gum >/dev/null 2>&1; then
+        if [[ -n "$title" ]]; then
+            gum style --bold "$title"
+        fi
+        printf '%s\n' "${items[@]}" | gum style --foreground 6 --margin "0 2"
+    else
+        if [[ -n "$title" ]]; then
+            echo "$title"
+        fi
+        printf '  • %s\n' "${items[@]}"
+    fi
+}
+
+# Pretty print warnings with lists
+dk_warn_list() {
+    local title="$1"
+    shift
+    local items=("$@")
+    
+    if [[ ${#items[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground 3 --bold "[dk] WARN: $title"
+        printf '%s\n' "${items[@]}" | gum style --foreground 3 --margin "0 2"
+    else
+        dk_warn "$title"
+        printf '  • %s\n' "${items[@]}"
+    fi
+    
+    # Also log to system journal
+    dk_warn "$title: ${items[*]}"
+}
+
+# Pretty print errors with lists
+dk_error_list() {
+    local title="$1"
+    shift
+    local items=("$@")
+    
+    if [[ ${#items[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground 1 --bold "[dk] ERROR: $title" >&2
+        printf '%s\n' "${items[@]}" | gum style --foreground 1 --margin "0 2" >&2
+    else
+        dk_fail "$title"
+        printf '  • %s\n' "${items[@]}" >&2
+    fi
+    
+    # Also log to system journal
+    dk_error "$title: ${items[*]}"
 }

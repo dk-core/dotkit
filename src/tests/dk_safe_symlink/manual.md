@@ -73,12 +73,10 @@ nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf /tm
 
 #### Test 2.2: Reject relative paths that escape config home
 
-FIXME create a better example path for this test
-
 ```bash
 # Test that relative paths escaping config home are rejected
 cd "$TEST_CONFIG_HOME"
-../../.nix run . -- ln ../dotkit/src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf ../../../tmp/test.conf
+nix run /home/richen/dev/dotkit -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf ../escape_attempt.conf
 
 # Expected output: Should fail with error about path being outside XDG_CONFIG_HOME
 ```
@@ -117,9 +115,8 @@ echo "existing content" > "$TEST_CONFIG_HOME/app1/existing.conf"
 # Try to create symlink over existing file
 nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing.conf"
 
-# Expected output: Should prompt to overwrite the file
-# - If you answer 'y' or 'yes': file should be replaced with symlink
-# - If you answer 'n' or 'no': operation should be cancelled with exit code 125
+# Expected output: Should warn about the file being overwritten
+# Should prompt to backup the file
 ```
 
 #### Test 4.2: Handle existing symlink conflicts
@@ -132,16 +129,72 @@ ln -s "/some/old/target" "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
 # Try to create symlink over existing symlink
 nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
 
-# FIXME:Does not prompt
-󰣇 ~/dev/dotkit   main  !⇡1 ❯ nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_symlink.conf"                                          19:48 
-warning: Git tree '/media/backup_drive/Dev/dotkit' is dirty
-[dk] DEBUG: Processing 1 symlink pairs
-[dk] DEBUG: Using config home: /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4
-[dk] ✗ dk ln is not permitted to write outside of /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4
-
 # Expected output: Should show current symlink target and prompt to overwrite
 # - If you answer 'y' or 'yes': symlink should be updated to new target
 # - If you answer 'n' or 'no': operation should be cancelled with exit code 125
+```
+
+#### Test 4.3: Handle multiple existing file conflicts
+
+```bash
+# Create multiple existing files
+mkdir -p "$TEST_CONFIG_HOME/app1" "$TEST_CONFIG_HOME/app2"
+echo "existing content 1" > "$TEST_CONFIG_HOME/app1/existing1.conf"
+echo "existing content 2" > "$TEST_CONFIG_HOME/app1/existing2.conf"
+echo "existing content 3" > "$TEST_CONFIG_HOME/app2/existing3.conf"
+
+# Try to create multiple symlinks over existing files
+nix run . -- ln \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing1.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config2.conf "$TEST_CONFIG_HOME/app1/existing2.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config3.conf "$TEST_CONFIG_HOME/app2/existing3.conf"
+
+# Expected output: Should fail with an error about multiple files being overwritten
+# Should prompt to backup the files
+```
+
+#### Test 4.4: Handle multiple existing symlink conflicts
+
+```bash
+# Create multiple existing symlinks
+mkdir -p "$TEST_CONFIG_HOME/app1" "$TEST_CONFIG_HOME/app2"
+ln -s "/some/old/target1" "$TEST_CONFIG_HOME/app1/existing1.conf"
+ln -s "/some/old/target2" "$TEST_CONFIG_HOME/app1/existing2.conf"
+ln -s "/some/old/target3" "$TEST_CONFIG_HOME/app2/existing3.conf"
+
+# Try to create multiple symlinks over existing symlinks
+nix run . -- ln \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing1.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config2.conf "$TEST_CONFIG_HOME/app1/existing2.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config3.conf "$TEST_CONFIG_HOME/app2/existing3.conf"
+
+# Expected output: Should show a formatted list of symlinks with their current targets
+# - If you answer 'y' or 'yes': all symlinks should be updated to new targets
+# - If you answer 'n' or 'no': operation should be cancelled with exit code 125
+```
+
+#### Test 4.5: Handle mixed file and symlink conflicts
+
+```bash
+# Create a mix of existing files and symlinks
+mkdir -p "$TEST_CONFIG_HOME/app1" "$TEST_CONFIG_HOME/app2"
+echo "existing file content 1" > "$TEST_CONFIG_HOME/app1/existing_file1.conf"
+ln -s "/some/old/target1" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf"
+echo "existing file content 2" > "$TEST_CONFIG_HOME/app2/existing_file2.conf"
+ln -s "/some/old/target2" "$TEST_CONFIG_HOME/app2/existing_symlink2.conf"
+
+# Try to create symlinks over the mixed conflicts
+nix run . -- ln \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_file1.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config2.conf "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config3.conf "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
+  src/tests/dk_safe_symlink/fixtures/test_sources/config4.conf "$TEST_CONFIG_HOME/app2/existing_symlink2.conf"
+
+# Expected output: Should show separate formatted lists for files and symlinks
+# - Files will be listed first with a warning about overwriting
+# - Symlinks will be listed second with their current targets
+# - If you answer 'n' or 'no' to either prompt: operation should be cancelled with exit code 125
+# - If you answer 'y' or 'yes' to both: all should be replaced/updated with new symlinks
 ```
 
 ### 5. Error Handling Tests
@@ -181,8 +234,6 @@ If `gum` is available in your environment, test the enhanced prompts:
 #### Test 6.1: gum confirmation prompts
 
 ```bash
-
-# FIXME: zsh: no such file or directory: /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4/app1/gum_test.conf
 # Test with gum available - create conflict and observe the styled prompt
 echo "existing content" > "$TEST_CONFIG_HOME/app1/gum_test.conf"
 nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/gum_test.conf"
@@ -193,8 +244,6 @@ nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$T
 ### 7. Debug Mode Testing
 
 #### Test 7.1: Enable debug logging
-
-FIXME: logger does not work in nix run environment
 
 ```bash
 # Enable debug mode

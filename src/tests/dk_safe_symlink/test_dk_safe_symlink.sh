@@ -221,6 +221,211 @@ test_exits_when_user_declines_symlink_overwrite() {
     teardown
 }
 
+# Enhanced Test 4.1: Multiple file conflicts
+test_handles_multiple_existing_file_conflicts() {
+    setup
+    mock_gum_yes
+    
+    # Create multiple existing files
+    create_test_file "$TEST_CONFIG_HOME/app1/existing1.conf" "existing content 1"
+    create_test_file "$TEST_CONFIG_HOME/app1/existing2.conf" "existing content 2"
+    create_test_file "$TEST_CONFIG_HOME/app2/existing3.conf" "existing content 3"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
+        >/dev/null 2>&1
+    assert_equals 0 $?
+    
+    # Verify all symlinks were created
+    [[ -L "$TEST_CONFIG_HOME/app1/existing1.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app1/existing2.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app2/existing3.conf" ]]
+    assert_equals 0 $?
+    
+    teardown
+}
+
+test_exits_when_user_declines_multiple_file_overwrite() {
+    setup
+    mock_gum_no
+    
+    # Create multiple existing files
+    create_test_file "$TEST_CONFIG_HOME/app1/existing1.conf" "existing content 1"
+    create_test_file "$TEST_CONFIG_HOME/app1/existing2.conf" "existing content 2"
+    create_test_file "$TEST_CONFIG_HOME/app2/existing3.conf" "existing content 3"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
+        >/dev/null 2>&1
+    assert_equals 125 $?
+    
+    # Verify original files are unchanged
+    [[ -f "$TEST_CONFIG_HOME/app1/existing1.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing1.conf" ]]
+    assert_equals 0 $?
+    [[ -f "$TEST_CONFIG_HOME/app1/existing2.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing2.conf" ]]
+    assert_equals 0 $?
+    [[ -f "$TEST_CONFIG_HOME/app2/existing3.conf" && ! -L "$TEST_CONFIG_HOME/app2/existing3.conf" ]]
+    assert_equals 0 $?
+    
+    teardown
+}
+
+# Enhanced Test 4.2: Multiple symlink conflicts
+test_handles_multiple_existing_symlink_conflicts() {
+    setup
+    mock_gum_yes
+    
+    # Create multiple existing symlinks within config home
+    create_test_symlink "$TEST_CONFIG_HOME/old_target1" "$TEST_CONFIG_HOME/app1/existing1.conf"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target2" "$TEST_CONFIG_HOME/app1/existing2.conf"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target3" "$TEST_CONFIG_HOME/app2/existing3.conf"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
+        >/dev/null 2>&1
+    assert_equals 0 $?
+    
+    # Verify all symlinks were updated
+    local link_target1 link_target2 link_target3
+    link_target1=$(readlink "$TEST_CONFIG_HOME/app1/existing1.conf")
+    link_target2=$(readlink "$TEST_CONFIG_HOME/app1/existing2.conf")
+    link_target3=$(readlink "$TEST_CONFIG_HOME/app2/existing3.conf")
+    assert_equals "$TEST_CONFIG_HOME/source1.conf" "$link_target1"
+    assert_equals "$TEST_CONFIG_HOME/source2.conf" "$link_target2"
+    assert_equals "$TEST_CONFIG_HOME/source3.conf" "$link_target3"
+    
+    teardown
+}
+
+test_exits_when_user_declines_multiple_symlink_overwrite() {
+    setup
+    mock_gum_no
+    
+    # Create multiple existing symlinks within config home
+    create_test_symlink "$TEST_CONFIG_HOME/old_target1" "$TEST_CONFIG_HOME/app1/existing1.conf"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target2" "$TEST_CONFIG_HOME/app1/existing2.conf"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target3" "$TEST_CONFIG_HOME/app2/existing3.conf"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
+        >/dev/null 2>&1
+    assert_equals 125 $?
+    
+    # Verify original symlinks are unchanged
+    local link_target1 link_target2 link_target3
+    link_target1=$(readlink "$TEST_CONFIG_HOME/app1/existing1.conf")
+    link_target2=$(readlink "$TEST_CONFIG_HOME/app1/existing2.conf")
+    link_target3=$(readlink "$TEST_CONFIG_HOME/app2/existing3.conf")
+    assert_equals "$TEST_CONFIG_HOME/old_target1" "$link_target1"
+    assert_equals "$TEST_CONFIG_HOME/old_target2" "$link_target2"
+    assert_equals "$TEST_CONFIG_HOME/old_target3" "$link_target3"
+    
+    teardown
+}
+
+# Mixed conflict test that should error
+test_handles_mixed_file_and_symlink_conflicts() {
+    setup
+    mock_gum_yes
+    
+    # Create a mix of existing files and symlinks
+    create_test_file "$TEST_CONFIG_HOME/app1/existing_file1.conf" "existing content 1"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target1" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf"
+    create_test_file "$TEST_CONFIG_HOME/app2/existing_file2.conf" "existing content 2"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target2" "$TEST_CONFIG_HOME/app2/existing_symlink2.conf"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    create_test_file "$TEST_CONFIG_HOME/source4.conf" "test content 4"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing_file1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
+        "$TEST_CONFIG_HOME/source4.conf" "$TEST_CONFIG_HOME/app2/existing_symlink2.conf" \
+        >/dev/null 2>&1
+    assert_equals 0 $?
+    
+    # Verify all symlinks were created/updated
+    [[ -L "$TEST_CONFIG_HOME/app1/existing_file1.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app2/existing_file2.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app2/existing_symlink2.conf" ]]
+    assert_equals 0 $?
+    
+    teardown
+}
+
+test_exits_when_user_declines_mixed_conflicts() {
+    setup
+    mock_gum_no
+    
+    # Create a mix of existing files and symlinks
+    create_test_file "$TEST_CONFIG_HOME/app1/existing_file1.conf" "existing content 1"
+    create_test_symlink "$TEST_CONFIG_HOME/old_target1" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf"
+    create_test_file "$TEST_CONFIG_HOME/app2/existing_file2.conf" "existing content 2"
+    
+    # Create source files within config home for this test
+    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
+    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
+    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
+    
+    dk_safe_symlink \
+        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing_file1.conf" \
+        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" \
+        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
+        >/dev/null 2>&1
+    assert_equals 125 $?
+    
+    # Verify original files/symlinks are unchanged
+    [[ -f "$TEST_CONFIG_HOME/app1/existing_file1.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing_file1.conf" ]]
+    assert_equals 0 $?
+    [[ -L "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" ]]
+    assert_equals 0 $?
+    local link_target
+    link_target=$(readlink "$TEST_CONFIG_HOME/app1/existing_symlink1.conf")
+    assert_equals "$TEST_CONFIG_HOME/old_target1" "$link_target"
+    [[ -f "$TEST_CONFIG_HOME/app2/existing_file2.conf" && ! -L "$TEST_CONFIG_HOME/app2/existing_file2.conf" ]]
+    assert_equals 0 $?
+    
+    teardown
+}
+
 # Successful Operation Tests
 test_creates_single_symlink() {
     setup
