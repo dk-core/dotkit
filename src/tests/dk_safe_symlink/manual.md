@@ -190,11 +190,8 @@ nix run . -- ln \
   src/tests/dk_safe_symlink/fixtures/test_sources/config3.conf "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
   src/tests/dk_safe_symlink/fixtures/test_sources/config4.conf "$TEST_CONFIG_HOME/app2/existing_symlink2.conf"
 
-# Expected output: Should show separate formatted lists for files and symlinks
-# - Files will be listed first with a warning about overwriting
-# - Symlinks will be listed second with their current targets
-# - If you answer 'n' or 'no' to either prompt: operation should be cancelled with exit code 125
-# - If you answer 'y' or 'yes' to both: all should be replaced/updated with new symlinks
+# Expected output: Should exit with error about overwriting files
+# Should prompt to backup the files
 ```
 
 ### 5. Error Handling Tests
@@ -210,10 +207,13 @@ nix run . -- ln
 # Test with odd number of arguments
 nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf
 
+FIXME doesnt error prints usage message
 # Expected output: Should fail with error about paired arguments
 ```
 
 #### Test 5.2: Permission errors
+
+FIXME: doesnt print error message
 
 ```bash
 # Test creating symlink in read-only directory (if applicable)
@@ -320,9 +320,7 @@ For automated testing, you can run the comprehensive test suite:
 
 ```bash
 # Run the automated tests
-cd src/tests/dk_safe_symlink
-nix develop  # Enter development environment with bashunit
-bashunit test_dk_safe_symlink.sh
+bashunit ./srcs/tests/dk_safe_symlink/test_dk_safe_symlink.sh
 ```
 
 This manual guide complements the automated tests and allows for interactive verification of the `dk ln` functionality.

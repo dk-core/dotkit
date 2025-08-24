@@ -31,19 +31,11 @@ dk_status() {
 }
 
 dk_success() { 
-    if command -v gum >/dev/null 2>&1; then
-        gum style --foreground 2 "[dk] ✓ $*"
-    else
-        echo "[dk] ✓ $*"
-    fi
+    echo -e "\033[32m[dk] ✓ $*\033[0m"
 }
 
 dk_fail() { 
-    if command -v gum >/dev/null 2>&1; then
-        gum style --foreground 1 "[dk] ✗ $*" >&2
-    else
-        echo "[dk] ✗ $*" >&2
-    fi
+    echo -e "\033[31m[dk] ✗ $*\033[0m" >&2
 }
 
 # Pretty print arrays as lists
@@ -56,17 +48,10 @@ dk_print_list() {
         return 0
     fi
     
-    if command -v gum >/dev/null 2>&1; then
-        if [[ -n "$title" ]]; then
-            gum style --bold "$title"
-        fi
-        printf '%s\n' "${items[@]}" | gum style --foreground 6 --margin "0 2"
-    else
-        if [[ -n "$title" ]]; then
-            echo "$title"
-        fi
-        printf '  • %s\n' "${items[@]}"
+    if [[ -n "$title" ]]; then
+        echo -e "\033[1m$title\033[0m"
     fi
+    printf '\033[36m  • %s\033[0m\n' "${items[@]}"
 }
 
 # Pretty print warnings with lists
@@ -79,13 +64,8 @@ dk_warn_list() {
         return 0
     fi
     
-    if command -v gum >/dev/null 2>&1; then
-        gum style --foreground 3 --bold "[dk] WARN: $title"
-        printf '%s\n' "${items[@]}" | gum style --foreground 3 --margin "0 2"
-    else
-        dk_warn "$title"
-        printf '  • %s\n' "${items[@]}"
-    fi
+    echo -e "\033[33m\033[1m[dk] WARN: $title\033[0m"
+    printf '\033[33m  • %s\033[0m\n' "${items[@]}"
     
     # Also log to system journal
     dk_warn "$title: ${items[*]}"
@@ -101,13 +81,8 @@ dk_error_list() {
         return 0
     fi
     
-    if command -v gum >/dev/null 2>&1; then
-        gum style --foreground 1 --bold "[dk] ERROR: $title" >&2
-        printf '%s\n' "${items[@]}" | gum style --foreground 1 --margin "0 2" >&2
-    else
-        dk_fail "$title"
-        printf '  • %s\n' "${items[@]}" >&2
-    fi
+    echo -e "\033[31m\033[1m[dk] ERROR: $title\033[0m" >&2
+    printf '\033[31m  • %s\033[0m\n' "${items[@]}" >&2
     
     # Also log to system journal
     dk_error "$title: ${items[*]}"

@@ -2,7 +2,6 @@
 # test_dk_safe_symlink.sh - Comprehensive tests for dk_safe_symlink function
 
 #TODO: create a single test entry that sources dotkit
-#TODO: fix tests
 
 # Setup test environment
 setup() {
@@ -145,32 +144,14 @@ test_accepts_existing_sources() {
 }
 
 # Target Conflict Tests
-test_prompts_for_existing_file_overwrite() {
+test_exits_on_existing_file_conflict() {
     setup
-    mock_gum_yes
     
     # Create existing file
     create_test_file "$TEST_CONFIG_HOME/app1/existing.conf" "existing content"
     
     dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
-    assert_equals 0 $?
-    
-    # Verify symlink was created
-    [[ -L "$TEST_CONFIG_HOME/app1/existing.conf" ]]
-    assert_equals 0 $?
-    
-    teardown
-}
-
-test_exits_when_user_declines_file_overwrite() {
-    setup
-    mock_gum_no
-    
-    # Create existing file
-    create_test_file "$TEST_CONFIG_HOME/app1/existing.conf" "existing content"
-    
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
-    assert_equals 125 $?
+    assert_equals 1 $?
     
     # Verify original file is unchanged
     [[ -f "$TEST_CONFIG_HOME/app1/existing.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing.conf" ]]
@@ -222,9 +203,8 @@ test_exits_when_user_declines_symlink_overwrite() {
 }
 
 # Enhanced Test 4.1: Multiple file conflicts
-test_handles_multiple_existing_file_conflicts() {
+test_exits_on_multiple_existing_file_conflicts() {
     setup
-    mock_gum_yes
     
     # Create multiple existing files
     create_test_file "$TEST_CONFIG_HOME/app1/existing1.conf" "existing content 1"
@@ -241,39 +221,7 @@ test_handles_multiple_existing_file_conflicts() {
         "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
         >/dev/null 2>&1
-    assert_equals 0 $?
-    
-    # Verify all symlinks were created
-    [[ -L "$TEST_CONFIG_HOME/app1/existing1.conf" ]]
-    assert_equals 0 $?
-    [[ -L "$TEST_CONFIG_HOME/app1/existing2.conf" ]]
-    assert_equals 0 $?
-    [[ -L "$TEST_CONFIG_HOME/app2/existing3.conf" ]]
-    assert_equals 0 $?
-    
-    teardown
-}
-
-test_exits_when_user_declines_multiple_file_overwrite() {
-    setup
-    mock_gum_no
-    
-    # Create multiple existing files
-    create_test_file "$TEST_CONFIG_HOME/app1/existing1.conf" "existing content 1"
-    create_test_file "$TEST_CONFIG_HOME/app1/existing2.conf" "existing content 2"
-    create_test_file "$TEST_CONFIG_HOME/app2/existing3.conf" "existing content 3"
-    
-    # Create source files within config home for this test
-    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
-    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
-    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
-    
-    dk_safe_symlink \
-        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
-        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
-        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
-        >/dev/null 2>&1
-    assert_equals 125 $?
+    assert_equals 1 $?
     
     # Verify original files are unchanged
     [[ -f "$TEST_CONFIG_HOME/app1/existing1.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing1.conf" ]]
@@ -353,10 +301,9 @@ test_exits_when_user_declines_multiple_symlink_overwrite() {
     teardown
 }
 
-# Mixed conflict test that should error
-test_handles_mixed_file_and_symlink_conflicts() {
+# Mixed conflict test - file conflicts always cause exit 1
+test_exits_on_mixed_file_and_symlink_conflicts() {
     setup
-    mock_gum_yes
     
     # Create a mix of existing files and symlinks
     create_test_file "$TEST_CONFIG_HOME/app1/existing_file1.conf" "existing content 1"
@@ -376,41 +323,7 @@ test_handles_mixed_file_and_symlink_conflicts() {
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
         "$TEST_CONFIG_HOME/source4.conf" "$TEST_CONFIG_HOME/app2/existing_symlink2.conf" \
         >/dev/null 2>&1
-    assert_equals 0 $?
-    
-    # Verify all symlinks were created/updated
-    [[ -L "$TEST_CONFIG_HOME/app1/existing_file1.conf" ]]
-    assert_equals 0 $?
-    [[ -L "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" ]]
-    assert_equals 0 $?
-    [[ -L "$TEST_CONFIG_HOME/app2/existing_file2.conf" ]]
-    assert_equals 0 $?
-    [[ -L "$TEST_CONFIG_HOME/app2/existing_symlink2.conf" ]]
-    assert_equals 0 $?
-    
-    teardown
-}
-
-test_exits_when_user_declines_mixed_conflicts() {
-    setup
-    mock_gum_no
-    
-    # Create a mix of existing files and symlinks
-    create_test_file "$TEST_CONFIG_HOME/app1/existing_file1.conf" "existing content 1"
-    create_test_symlink "$TEST_CONFIG_HOME/old_target1" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf"
-    create_test_file "$TEST_CONFIG_HOME/app2/existing_file2.conf" "existing content 2"
-    
-    # Create source files within config home for this test
-    create_test_file "$TEST_CONFIG_HOME/source1.conf" "test content 1"
-    create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
-    create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
-    
-    dk_safe_symlink \
-        "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing_file1.conf" \
-        "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" \
-        "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
-        >/dev/null 2>&1
-    assert_equals 125 $?
+    assert_equals 1 $?
     
     # Verify original files/symlinks are unchanged
     [[ -f "$TEST_CONFIG_HOME/app1/existing_file1.conf" && ! -L "$TEST_CONFIG_HOME/app1/existing_file1.conf" ]]
@@ -572,7 +485,7 @@ test_fallback_prompt_yes() {
     teardown
 }
 
-test_fallback_prompt_no() {
+test_fallback_exits_on_file_conflict() {
     setup
     mock_gum_missing
     
@@ -582,9 +495,9 @@ test_fallback_prompt_no() {
     # Create a source file within config home for this test
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
-    # Simulate user typing "no"
-    echo "no" | dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
-    assert_equals 125 $?
+    # File conflicts always exit with code 1, no user prompt
+    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
+    assert_equals 1 $?
     
     teardown
 }
