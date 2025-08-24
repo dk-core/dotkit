@@ -21,32 +21,12 @@ this is simply a collection of scripts and a system design to support all dotfil
 
 imagine: grab dotfiles with one command, swap setups in a snap.  
 want to share or remix a theme? one command does it.  
-total control, endless combos—your setup, your rules.
+
+and the best part is you never worry about losing your custom configurations
 
 eg.\
 `dk install <github dotfile url>`\
 `dk theme install <github dotfile theme url>`
-
-## motivation
-
-let's be real - dotfiles are usually a beautiful mess.
-
-everyone does their own thing, which is awesome for making your setup uniquely yours...  
-but it can be a real pain when you want to:
-
-- share your configs with others
-- maintain them long-term
-- and as a user, try out different setups
-
-that's why i'm building dotkit
-
-the idea is simple: have some structure, but don't box anyone in. want to:
-
-- try out someone's cool terminal setup? just grab their module.
-- test different status bar configs? install as many as you want.
-- switch between setups? no conflicts, no stress.
-
-never worry about losing your custom configurations
 
 ## how does it work?
 
@@ -61,9 +41,7 @@ the "base" layer is dotkit itself, providing scripts and hooks to make up the sy
 
 the "dotfiles" layer is the dotkit community, providing a collection of dotfiles and a way to install them
 
-the "themes" layer is an optional layer. if the dotfiles support theming, you can easily swap out themes either made by the dotfile team or by the community
-
-user profiles are the last layer, they are your own personal customizations to all the other layers
+user profiles are your own personal customizations to all the other layers
 
 all work together to create a "current" layer, which is your active system.
 

@@ -201,6 +201,9 @@ additionally, users need to have checks and balances to ensure dk is working as 
 
 ### scripts - 40%
 
+- history command?
+  - track commands for symlinks and show what happened, ability to undo up to the last 5 maybe
+
 - [ ] lib, helper functions
   - [x] safe symlink function - [dk ln](./src/lib/dk_safe_symlink.sh)
   - [x] logging & printing functions - [dk log](./src/lib/dk_logging.sh)
@@ -218,8 +221,9 @@ additionally, users need to have checks and balances to ensure dk is working as 
     - force
     - non-interactive
   - [ ] fix `dn ln` test printing
-
-  - 
+  - style gum confirm
+  - remove theme layer, as we can support themes without it
+    - themes go in the dotfiles dir, gitignored
 
   - [ ] status script
     - [ ] small version print
