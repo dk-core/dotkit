@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # test_dk_safe_symlink.sh - Comprehensive tests for dk_safe_symlink function
 
+#TODO: create a single test entry that sources dotkit
+#TODO: fix tests
+
 # Setup test environment
 setup() {
     # Get absolute paths for testing
     TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    SRC_DIR="$(dirname "$TEST_DIR")"
+    # Go up two levels from src/tests/dk_safe_symlink to get to src
+    SRC_DIR="$(dirname "$(dirname "$TEST_DIR")")"
     FIXTURES_DIR="$TEST_DIR/fixtures"
     
     # Source the function under test
@@ -87,10 +91,12 @@ test_rejects_paths_outside_config_home() {
     setup
     
     # Test absolute path outside config home
-    assert_equals 1 "$(dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "/etc/test.conf" 2>/dev/null; echo $?)"
+    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "/etc/test.conf" >/dev/null 2>&1
+    assert_equals 1 $?
     
     # Test relative path that resolves outside config home
-    assert_equals 1 "$(dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "../../../etc/test.conf" 2>/dev/null; echo $?)"
+    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "../../../etc/test.conf" >/dev/null 2>&1
+    assert_equals 1 $?
     
     teardown
 }
@@ -114,9 +120,8 @@ test_allows_paths_within_config_home() {
 test_rejects_nonexistent_sources() {
     setup
     
-    local result
-    result=$(dk_safe_symlink "/nonexistent/file.conf" "$TEST_CONFIG_HOME/app1/config.conf" 2>/dev/null; echo $?)
-    assert_equals 1 "$result"
+    dk_safe_symlink "/nonexistent/file.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
+    assert_equals 1 $?
     
     teardown
 }
@@ -124,9 +129,8 @@ test_rejects_nonexistent_sources() {
 test_rejects_multiple_nonexistent_sources() {
     setup
     
-    local result
-    result=$(dk_safe_symlink "/nonexistent1.conf" "$TEST_CONFIG_HOME/app1/config1.conf" "/nonexistent2.conf" "$TEST_CONFIG_HOME/app1/config2.conf" 2>/dev/null; echo $?)
-    assert_equals 1 "$result"
+    dk_safe_symlink "/nonexistent1.conf" "$TEST_CONFIG_HOME/app1/config1.conf" "/nonexistent2.conf" "$TEST_CONFIG_HOME/app1/config2.conf" >/dev/null 2>&1
+    assert_equals 1 $?
     
     teardown
 }

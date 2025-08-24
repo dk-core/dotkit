@@ -4,17 +4,7 @@ This guide provides step-by-step instructions for manually testing the `dk ln` c
 
 ## Prerequisites
 
-1. Build the dotkit program:
-
-   ```bash
-   # Make sure you're in the dotkit project root
-   cd /home/richen/dev/dotkit
-   
-   # Make the binary executable
-   chmod +x bin/dotkit
-   ```
-
-2. Set up test environment:
+1. Set up test environment:
 
    ```bash
    # Create a temporary config directory for testing
@@ -31,7 +21,7 @@ This guide provides step-by-step instructions for manually testing the `dk ln` c
 
 ```bash
 # Test creating a basic symlink
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/config.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/config.conf"
 
 # Verify the symlink was created
 ls -la "$TEST_CONFIG_HOME/app1/config.conf"
@@ -44,7 +34,7 @@ readlink "$TEST_CONFIG_HOME/app1/config.conf"
 
 ```bash
 # Test creating multiple symlinks in one command
-./bin/dotkit ln \
+nix run . -- ln \
   src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/config1.conf" \
   src/tests/dk_safe_symlink/fixtures/test_sources/config2.conf "$TEST_CONFIG_HOME/app2/config2.conf"
 
@@ -61,7 +51,7 @@ readlink "$TEST_CONFIG_HOME/app2/config2.conf"
 
 ```bash
 # Test creating symlink in a nested directory that doesn't exist
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/deep/nested/path/config.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/deep/nested/path/config.conf"
 
 # Verify the directory structure was created
 ls -la "$TEST_CONFIG_HOME/deep/nested/path/config.conf"
@@ -76,17 +66,19 @@ readlink "$TEST_CONFIG_HOME/deep/nested/path/config.conf"
 
 ```bash
 # Test that absolute paths outside config home are rejected
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf /tmp/test.conf
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf /tmp/test.conf
 
 # Expected output: Should fail with error about path being outside XDG_CONFIG_HOME
 ```
 
 #### Test 2.2: Reject relative paths that escape config home
 
+FIXME create a better example path for this test
+
 ```bash
 # Test that relative paths escaping config home are rejected
 cd "$TEST_CONFIG_HOME"
-../../../bin/dotkit ln ../dotkit/src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf ../../../tmp/test.conf
+../../.nix run . -- ln ../dotkit/src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf ../../../tmp/test.conf
 
 # Expected output: Should fail with error about path being outside XDG_CONFIG_HOME
 ```
@@ -97,7 +89,7 @@ cd "$TEST_CONFIG_HOME"
 
 ```bash
 # Test that nonexistent source files are rejected
-./bin/dotkit ln /nonexistent/file.conf "$TEST_CONFIG_HOME/app1/config.conf"
+nix run . -- ln /nonexistent/file.conf "$TEST_CONFIG_HOME/app1/config.conf"
 
 # Expected output: Should fail with error about missing source files
 ```
@@ -106,7 +98,7 @@ cd "$TEST_CONFIG_HOME"
 
 ```bash
 # Test that multiple nonexistent sources are all reported
-./bin/dotkit ln \
+nix run . -- ln \
   /nonexistent1.conf "$TEST_CONFIG_HOME/app1/config1.conf" \
   /nonexistent2.conf "$TEST_CONFIG_HOME/app1/config2.conf"
 
@@ -123,7 +115,7 @@ mkdir -p "$TEST_CONFIG_HOME/app1"
 echo "existing content" > "$TEST_CONFIG_HOME/app1/existing.conf"
 
 # Try to create symlink over existing file
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing.conf"
 
 # Expected output: Should prompt to overwrite the file
 # - If you answer 'y' or 'yes': file should be replaced with symlink
@@ -138,7 +130,14 @@ mkdir -p "$TEST_CONFIG_HOME/app1"
 ln -s "/some/old/target" "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
 
 # Try to create symlink over existing symlink
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
+
+# FIXME:Does not prompt
+󰣇 ~/dev/dotkit   main  !⇡1 ❯ nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/existing_symlink.conf"                                          19:48 
+warning: Git tree '/media/backup_drive/Dev/dotkit' is dirty
+[dk] DEBUG: Processing 1 symlink pairs
+[dk] DEBUG: Using config home: /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4
+[dk] ✗ dk ln is not permitted to write outside of /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4
 
 # Expected output: Should show current symlink target and prompt to overwrite
 # - If you answer 'y' or 'yes': symlink should be updated to new target
@@ -151,12 +150,12 @@ ln -s "/some/old/target" "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
 
 ```bash
 # Test with no arguments
-./bin/dotkit ln
+nix run . -- ln
 
 # Expected output: Should fail with usage message
 
 # Test with odd number of arguments
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf
 
 # Expected output: Should fail with error about paired arguments
 ```
@@ -168,7 +167,7 @@ ln -s "/some/old/target" "$TEST_CONFIG_HOME/app1/existing_symlink.conf"
 mkdir -p "$TEST_CONFIG_HOME/readonly"
 chmod 444 "$TEST_CONFIG_HOME/readonly"
 
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/readonly/config.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/readonly/config.conf"
 
 # Expected output: Should fail with permission error
 # Clean up
@@ -182,12 +181,11 @@ If `gum` is available in your environment, test the enhanced prompts:
 #### Test 6.1: gum confirmation prompts
 
 ```bash
-# Install gum if not available (in nix environment)
-nix develop
 
+# FIXME: zsh: no such file or directory: /tmp/nix-shell.LDGTbv/tmp.x4DM8Ltcg4/app1/gum_test.conf
 # Test with gum available - create conflict and observe the styled prompt
 echo "existing content" > "$TEST_CONFIG_HOME/app1/gum_test.conf"
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/gum_test.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/app1/gum_test.conf"
 
 # Expected output: Should show a styled gum confirmation dialog
 ```
@@ -196,12 +194,14 @@ echo "existing content" > "$TEST_CONFIG_HOME/app1/gum_test.conf"
 
 #### Test 7.1: Enable debug logging
 
+FIXME: logger does not work in nix run environment
+
 ```bash
 # Enable debug mode
 export DK_DEBUG=1
 
 # Run a command and check system logs
-./bin/dotkit ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/debug_test/config.conf"
+nix run . -- ln src/tests/dk_safe_symlink/fixtures/test_sources/config1.conf "$TEST_CONFIG_HOME/debug_test/config.conf"
 
 # Check debug logs (may require appropriate permissions)
 journalctl -t dk --since "1 minute ago" | grep DEBUG
