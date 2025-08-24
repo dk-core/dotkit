@@ -7,6 +7,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/dk_logging.sh"
 # dk_safe_symlink - Creates symlinks safely with validation and user prompts
 # Usage: dk_safe_symlink source1 target1 [source2 target2 ...]
 # Or with associative array: dk_safe_symlink_array
+# TODO: associative array should be the preferred method of interacting with dk
+# TODO: detect if input is associative array or list of args??
 dk_safe_symlink() {
     local -a sources=()
     local -a targets=()

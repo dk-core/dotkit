@@ -12,9 +12,9 @@
   - [todo](#todo)
     - [while below is in progress](#while-below-is-in-progress)
       - [testing library](#testing-library)
-    - [scripts - 10%](#scripts---10)
-    - [configuration, init - 30%](#configuration-init---30)
-    - [dotfiles - hyprland template - 40%](#dotfiles---hyprland-template---40)
+    - [scripts - 40%](#scripts---40)
+    - [configuration, init - 60%](#configuration-init---60)
+    - [dotfiles - hyprland template - 70%](#dotfiles---hyprland-template---70)
     - [install script 50%](#install-script-50)
     - [testing, lots of testing 60%](#testing-lots-of-testing-60)
     - [dk (cli) - 70%](#dk-cli---70)
@@ -199,42 +199,27 @@ additionally, users need to have checks and balances to ensure dk is working as 
 - [ ] programs installed correctly
 - [ ] scripts produce expected output
 
-### scripts - 10%
+### scripts - 40%
 
 - [ ] lib, helper functions
-  - [ ] safe symlink function
+  - [x] safe symlink function - [dk ln](./src/lib/dk_safe_symlink.sh)
+  - [x] logging & printing functions - [dk log](./src/lib/dk_logging.sh)
+  
+  - [ ] add commands folder, revise build script
+  - [ ] rename scripts, remove dk prefix
+  - [ ] rename `dk ln` to `dk link`
+  - [ ] better test system
+  - [ ] command arg handler
+  - [ ] command flag handler
+  - [ ] logging command & args
+  - [ ] `dn ln` infers type, associative array or list of args
+  - [ ] args for `dn ln`
+    - dry-run
+    - force
+    - non-interactive
+  - [ ] fix `dn ln` test printing
 
-    ```bash
-    dk_safe_symlink() {
-      # takes a hashmap of source -> target
-      # checks if any paths are outside of $XDG_CONFIG_HOME, failes with exit 1 - "dk ln is not permitted to write outside of $XDG_CONFIG_HOME"
-      # checks if any sources don't exist, and exits with 1 - "sources []source do not exist"
-      # checks if any targets are files, and if so uses gum to print a warning with the full list of files
-      # checks if any targets are symlinks, and if so uses gum to print a prompt to overwrite
-      # if no on prompt, exit with 125 - "dk ln safely exited. please manually backup files[]"
-      # if yes on prompt, symlink with ln -sfn
-      # use dk_log, dk_error, dk_debug, dk_warn for logging
-      # use gum for pretty printing and prompts
-    }
-    ```
-
-  - [ ] logging functions
-
-    ```bash
-    dk_log() { logger -t dk "$*"; }
-    dk_error() { logger -p user.err -t dk "ERROR: $*"; }
-    dk_debug() { [[ $DK_DEBUG ]] && logger -t dk "DEBUG: $*"; }
-    dk_warn() { logger -p user.warning -t dk "WARN: $*"; }
-    ```
-
-  - [ ] printing functions
-
-    ```bash
-    dk_print() { echo "[dk] $*"; }
-    dk_status() { echo "[dk] status: $*"; }
-    dk_success() { echo "[dk] ✓ $*"; }
-    dk_fail() { echo "[dk] ✗ $*" >&2; }
-    ```
+  - 
 
   - [ ] status script
     - [ ] small version print
@@ -272,8 +257,8 @@ additionally, users need to have checks and balances to ensure dk is working as 
     - [ ] shows symlink status of dotfiles shorthand
 
       ```bash
-      dk_symlink_status() {
-        # check ~/.config/* symlinks
+      dk_config_status() {
+        # check ~/.config/* symlinks and files
         # show broken/missing/valid status
         # colorized output
       }
@@ -308,6 +293,7 @@ additionally, users need to have checks and balances to ensure dk is working as 
       ```
 
   - [ ] tools for dotfile maintainers
+
     - [ ] dotfile/theme installation
 
       ```bash
@@ -351,17 +337,18 @@ additionally, users need to have checks and balances to ensure dk is working as 
       }
       ```
 
-    - [ ] supported systems
+    - [ ] supporting cross-distros & package management
+  
+      - [ ] supported systems
 
-      ```bash
-      dk_check_system() {
-        # detect os, desktop environment
-        # check required dependencies
-        # return compatibility status
-      }
-      ```
+        ```bash
+        dk_check_system() {
+          # detect os, desktop environment
+          # check required dependencies
+          # return compatibility status
+        }
+        ```
 
-    - [ ] supported package managers
       - [ ] cross-distro package management
         - [ ] leverage existing tools: use `command -v` for detection, `/etc/os-release` for distro id
 
@@ -399,46 +386,26 @@ additionally, users need to have checks and balances to ensure dk is working as 
           esac
           ```
 
-        - [ ] universal package managers: support nix, flatpak, brew as fallbacks
+        - [ ] get user packages
 
           ```bash
-          dk_install_universal() {
-            local package="$1"
-            if dk_has_cmd nix; then nix-env -iA "$package"
-            elif dk_has_cmd flatpak; then flatpak install "$package"
-            elif dk_has_cmd brew; then brew install "$package"
-            fi
+          dk_user_packages() {
+            case "$(dk_package_manager)" in
+              pacman) pacman -Qqe ;;
+              apt) apt list --installed ;;
+              dnf) dnf list installed ;;
+            esac
           }
           ```
 
-        - [ ] simple integration: `dk install` runs dotfile's `dk.dotfile.install.sh` if present
+        - [ ] diff packages with dotfiles/themes/profiles
 
           ```bash
-          dk_install() {
-            local install_script="$DK_CURRENT/dotfile/lib/dk.dotfile.install.sh"
-            [[ -x "$install_script" ]] && "$install_script"
+          dk_diff_packages() {
+            # compare packages with dotfile/theme/profile
+            # show differences
           }
           ```
-
-    - [ ] supported desktop environments
-
-      ```bash
-      dk_desktop_environment() {
-        echo "${XDG_CURRENT_DESKTOP:-unknown}"
-      }
-      ```
-
-    - [ ] get user packages
-
-      ```bash
-      dk_user_packages() {
-        case "$(dk_package_manager)" in
-          pacman) pacman -Qqe ;;
-          apt) apt list --installed ;;
-          dnf) dnf list installed ;;
-        esac
-      }
-      ```
 
 - [ ] "current" system
 
@@ -535,15 +502,17 @@ additionally, users need to have checks and balances to ensure dk is working as 
   }
   ```
 
-### configuration, init - 30%
+### configuration, init - 60%
 
 - [ ] setup dkvm for dev
   - [ ] quickemu??
 
+- no themes just dotfiles
+
 - [ ] hyprland config
 - [ ] waybar config
-- [ ] rofi config
-- [ ] dunst config
+- [ ] walker config
+- [ ] swaync config
 - [ ] gtk theme
 - [ ] font
 - [ ] icons
@@ -555,12 +524,12 @@ additionally, users need to have checks and balances to ensure dk is working as 
   - [ ] hyprland
   - [ ] waybar
   - [ ] rofi
-  - [ ] /current/theme using catpuccino mocha
   - [ ] hand feed wallbash template temporarily to catpuccino mocha
 
-- [ ] fully configure an initial theme using the new model
+- [ ] fully configure an initial dotfiles using the new model
+- [ ] build scripts for install, set, update
 
-### dotfiles - hyprland template - 40%
+### dotfiles - hyprland template - 70%
 
 - [ ] move dotfiles to new template
 

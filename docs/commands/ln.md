@@ -1,12 +1,15 @@
+<img src="https://www.dotkit.app/dk-logo.svg" width="65" align="right">
+
 # dk ln - safe symlink creation for dotkit
 
 ## overview
 
-the `dk_safe_symlink.sh` script provides safe symlink creation functionality for the dotkit project. it includes validation, user prompts for conflicts, and ensures all operations are restricted to the xdg_config_home directory for security.
+the `dk ln` command provides safe symlink creation functionality for the dotkit projects.\
+it includes validation, user prompts for conflicts, and ensures all operations are restricted to the xdg_config_home directory for security.
 
 ## functions
 
-### dk_safe_symlink
+### dk ln
 
 creates symlinks safely with validation and user prompts for conflicts.
 
@@ -42,27 +45,28 @@ dk ln source1 target1 [source2 target2 ...]
 ##### basic usage
 
 ```bash
-# single symlink
-dk ln ~/.dotfiles/vimrc ~/.config/vim/vimrc
+# single symlink from dotfile layer
+dk ln ~/.local/share/dk/current/dotfile/hyprland.conf ~/.config/hypr/hyprland.conf
 
-# multiple symlinks
+# multiple symlinks from theme layer
 dk ln \
-    ~/.dotfiles/bashrc ~/.config/bash/bashrc \
-    ~/.dotfiles/gitconfig ~/.config/git/config \
-    ~/.dotfiles/tmux.conf ~/.config/tmux/tmux.conf
+    ~/.local/share/dk/current/theme/waybar/config ~/.config/waybar/config \
+    ~/.local/share/dk/current/theme/rofi/config.rasi ~/.config/rofi/config.rasi \
+    ~/.local/share/dk/current/theme/dunst/dunstrc ~/.config/dunst/dunstrc
 ```
 
 ##### relative paths
 
 ```bash
-# using relative paths (will be converted to absolute)
-cd ~/.dotfiles
+# using relative paths from within a dotfile directory
+cd ~/.local/share/dk/dotfiles/my-dotfiles
 dk ln \
-    ./configs/zshrc ~/.config/zsh/.zshrc \
-    ./configs/alacritty.yml ~/.config/alacritty/alacritty.yml
+    ./hypr/hyprland.conf ~/.config/hypr/hyprland.conf \
+    ./waybar/config ~/.config/waybar/config \
+    ./alacritty/alacritty.yml ~/.config/alacritty/alacritty.yml
 ```
 
-### dk_safe_symlink_array
+### dk ln
 
 alternative function for use with associative arrays (requires bash 4+).
 
@@ -85,38 +89,133 @@ dk ln array_name
 
 # declare associative array
 declare -A dotfiles_map=(
-    ["$HOME/.dotfiles/vimrc"]="$HOME/.config/vim/vimrc"
-    ["$HOME/.dotfiles/bashrc"]="$HOME/.config/bash/bashrc"
-    ["$HOME/.dotfiles/gitconfig"]="$HOME/.config/git/config"
+    ["$HOME/.local/share/dk/dotfiles/my-hyprland/hypr/hyprland.conf"]="$HOME/.config/hypr/hyprland.conf"
+    ["$HOME/.local/share/dk/dotfiles/my-hyprland/waybar/config"]="$HOME/.config/waybar/config"
+    ["$HOME/.local/share/dk/dotfiles/my-hyprland/rofi/config.rasi"]="$HOME/.config/rofi/config.rasi"
 )
 
 # create symlinks using the array
 dk ln dotfiles_map
 ```
 
-##### dynamic array building
+## layered desktop environment integration
+
+
+### dotfile layer application
+
+example of how a dotfile applies its configurations
+this would typically be in dk.dotfile.set.sh within a dotfile
 
 ```bash
 #!/usr/bin/env bash
 
-# build array dynamically
-declare -A config_links=()
+DOTFILE_PATH="$HOME/.local/share/dk/dotfiles/my-dotfiles"
 
-# add configurations based on conditions
-if [[ -f "$HOME/.dotfiles/zshrc" ]]; then
-    config_links["$HOME/.dotfiles/zshrc"]="$HOME/.config/zsh/.zshrc"
+# apply dotfile configurations
+dk ln \
+    "$DOTFILE_PATH/hypr/hyprland.conf" "$HOME/.config/hypr/hyprland.conf" \
+    "$DOTFILE_PATH/waybar/config" "$HOME/.config/waybar/config" \
+    "$DOTFILE_PATH/rofi/config.rasi" "$HOME/.config/rofi/config.rasi" \
+    "$DOTFILE_PATH/dunst/dunstrc" "$HOME/.config/dunst/dunstrc"
+```
+
+### theme layer application
+
+```bash
+#!/usr/bin/env bash
+
+# example of how a theme applies its customizations
+# this would typically be in dk.theme.set.sh within a theme
+
+DOTKIT_ROOT="$HOME/.local/share/dk"
+THEME_NAME="catppuccin-mocha"
+THEME_PATH="$DOTKIT_ROOT/themes/$THEME_NAME"
+
+# apply theme-specific configurations (colors, styling)
+if [[ -f "$THEME_PATH/hypr/colors.conf" ]]; then
+    dk ln "$THEME_PATH/hypr/colors.conf" "$HOME/.config/hypr/colors.conf"
 fi
 
-if [[ -f "$HOME/.dotfiles/tmux.conf" ]]; then
-    config_links["$HOME/.dotfiles/tmux.conf"]="$HOME/.config/tmux/tmux.conf"
+if [[ -f "$THEME_PATH/waybar/style.css" ]]; then
+    dk ln "$THEME_PATH/waybar/style.css" "$HOME/.config/waybar/style.css"
 fi
 
-if [[ -d "$HOME/.dotfiles/nvim" ]]; then
-    config_links["$HOME/.dotfiles/nvim"]="$HOME/.config/nvim"
+# apply wallpaper
+if [[ -f "$THEME_PATH/wallpaper.jpg" ]]; then
+    dk ln "$THEME_PATH/wallpaper.jpg" "$DOTKIT_ROOT/current/wallpaper"
+fi
+```
+
+### user profile customization
+
+```bash
+#!/usr/bin/env bash
+
+# example of how a user profile overrides configurations
+# this would typically be in dk.profile.set.sh within a user profile
+
+DOTKIT_ROOT="$HOME/.local/share/dk"
+PROFILE_NAME="my-profile"
+PROFILE_PATH="$DOTKIT_ROOT/profiles/$PROFILE_NAME"
+
+# override waybar with custom configuration
+if [[ -f "$PROFILE_PATH/waybar/config" ]]; then
+    dk ln "$PROFILE_PATH/waybar/config" "$HOME/.config/waybar/config"
 fi
 
-# create all symlinks
-dk ln config_links
+# add custom rofi themes
+if [[ -d "$PROFILE_PATH/rofi/themes" ]]; then
+    for theme_file in "$PROFILE_PATH/rofi/themes"/*.rasi; do
+        if [[ -f "$theme_file" ]]; then
+            theme_name=$(basename "$theme_file" .rasi)
+            dk ln "$theme_file" "$HOME/.config/rofi/themes/$theme_name.rasi"
+        fi
+    done
+fi
+
+# custom keybindings or additional configs
+if [[ -f "$PROFILE_PATH/hypr/keybindings.conf" ]]; then
+    dk ln "$PROFILE_PATH/hypr/keybindings.conf" "$HOME/.config/hypr/keybindings.conf"
+fi
+```
+
+### profile hook system integration
+
+```bash
+#!/usr/bin/env bash
+
+# example of how dk ln integrates with the namespace hook system
+# this shows how apps can use their own scripts while leveraging dk ln
+
+# function to set up waybar with theme support
+setup_waybar() {
+    local waybar_config="$1"
+    local waybar_style="$2"
+
+    # link base configuration
+    dk ln "$waybar_config" "$HOME/.config/waybar/config"
+
+    # link style if provided
+    if [[ -n "$waybar_style" && -f "$waybar_style" ]]; then
+        dk ln "$waybar_style" "$HOME/.config/waybar/style.css"
+    fi
+
+    # restart waybar if it's running
+    if pgrep waybar >/dev/null; then
+        pkill waybar
+        # waybar will be restarted by the hook system
+    fi
+}
+
+# usage in a theme's dk.theme.set.sh
+DOTKIT_ROOT="$HOME/.local/share/dk"
+THEME_PATH="$DOTKIT_ROOT/current/theme"
+
+if [[ -d "$THEME_PATH/waybar" ]]; then
+    setup_waybar \
+        "$THEME_PATH/waybar/config" \
+        "$THEME_PATH/waybar/style.css"
+fi
 ```
 
 ## scripting examples
@@ -135,7 +234,7 @@ configs=(
     "tmux.conf:tmux/tmux.conf"
 )
 
-# build arguments for dk_safe_symlink
+# build arguments for dk ln
 args=()
 for config in "${configs[@]}"; do
     IFS=':' read -r source_name target_path <<< "$config"
@@ -288,10 +387,11 @@ the script handles two types of conflicts:
 
 ## best practices
 
-1. **always validate sources exist** before calling the function (though the function does this too)
-2. **use absolute paths** when possible to avoid confusion
-3. **group related symlinks** in single function calls for better error handling
-4. **handle return codes** appropriately in scripts
-5. **test with dry-run** approach by echoing commands first in development
-6. **use associative arrays** for complex configurations to improve readability
-7. **implement proper error handling** in wrapper scripts
+1. **understand the layered approach**: familiarize yourself with how dotkit's layered desktop environment works (dotfile → theme → profile layers)
+2. **use dotkit paths**: leverage `~/.local/share/dk/current/*` paths in your scripts for better integration
+3. **validate layer availability**: check if layers exist before trying to link from them
+4. **group related configurations**: create symlinks for related applications together for better error handling
+5. **handle return codes**: properly handle the specific exit codes (0, 1, 125) in your scripts
+6. **use associative arrays**: for complex configurations, use `dk_safe_symlink_array` with associative arrays
+7. **implement error handling**: wrap dk ln calls in functions with proper error checking
+8. **test with layered scenarios**: ensure your scripts work with the full dotkit layered structure
