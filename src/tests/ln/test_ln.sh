@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# test_dk_safe_symlink.sh - Comprehensive tests for dk_safe_symlink function
-
-#TODO: create a single test entry that sources dotkit
+# test_ln.sh - Comprehensive tests for dk ln command
 
 # Setup test environment
 setup() {
     # Get absolute paths for testing
     TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    # Go up two levels from src/tests/dk_safe_symlink to get to src
+    # Go up two levels from src/tests/ln to get to src
     SRC_DIR="$(dirname "$(dirname "$TEST_DIR")")"
     FIXTURES_DIR="$TEST_DIR/fixtures"
     
-    # Source the function under test
-    # shellcheck disable=SC1091
-    source "$SRC_DIR/lib/dk_safe_symlink.sh"
+    # Define the 'dk' command for testing
+    dk() {
+        "$SRC_DIR/main.sh" "$@"
+    }
+    export -f dk # Export the function so it's available in subshells
     
     # Create temporary test config directory
     TEST_CONFIG_HOME="$(mktemp -d)"
@@ -90,11 +90,11 @@ test_rejects_paths_outside_config_home() {
     setup
     
     # Test absolute path outside config home
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "/etc/test.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "/etc/test.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     # Test relative path that resolves outside config home
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "../../../etc/test.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "../../../etc/test.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     teardown
@@ -104,12 +104,12 @@ test_allows_paths_within_config_home() {
     setup
     
     # Test absolute path within config home
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Test relative path within config home
     cd "$TEST_CONFIG_HOME" || exit
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config2.conf" "app2/config.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config2.conf" "app2/config.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     teardown
@@ -119,7 +119,7 @@ test_allows_paths_within_config_home() {
 test_rejects_nonexistent_sources() {
     setup
     
-    dk_safe_symlink "/nonexistent/file.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
+    dk ln "/nonexistent/file.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     teardown
@@ -128,7 +128,7 @@ test_rejects_nonexistent_sources() {
 test_rejects_multiple_nonexistent_sources() {
     setup
     
-    dk_safe_symlink "/nonexistent1.conf" "$TEST_CONFIG_HOME/app1/config1.conf" "/nonexistent2.conf" "$TEST_CONFIG_HOME/app1/config2.conf" >/dev/null 2>&1
+    dk ln "/nonexistent1.conf" "$TEST_CONFIG_HOME/app1/config1.conf" "/nonexistent2.conf" "$TEST_CONFIG_HOME/app1/config2.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     teardown
@@ -137,7 +137,7 @@ test_rejects_multiple_nonexistent_sources() {
 test_accepts_existing_sources() {
     setup
     
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     teardown
@@ -150,7 +150,7 @@ test_exits_on_existing_file_conflict() {
     # Create existing file
     create_test_file "$TEST_CONFIG_HOME/app1/existing.conf" "existing content"
     
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     # Verify original file is unchanged
@@ -170,7 +170,7 @@ test_prompts_for_existing_symlink_overwrite() {
     # Create a source file within config home for this test
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
-    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
+    dk ln "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify symlink was updated
@@ -191,7 +191,7 @@ test_exits_when_user_declines_symlink_overwrite() {
     # Create a source file within config home for this test
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
-    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
+    dk ln "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
     assert_equals 125 $?
     
     # Verify original symlink is unchanged
@@ -216,7 +216,7 @@ test_exits_on_multiple_existing_file_conflicts() {
     create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
     create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
     
-    dk_safe_symlink \
+    dk ln \
         "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
         "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
@@ -249,7 +249,7 @@ test_handles_multiple_existing_symlink_conflicts() {
     create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
     create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
     
-    dk_safe_symlink \
+    dk ln \
         "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
         "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
@@ -282,7 +282,7 @@ test_exits_when_user_declines_multiple_symlink_overwrite() {
     create_test_file "$TEST_CONFIG_HOME/source2.conf" "test content 2"
     create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
     
-    dk_safe_symlink \
+    dk ln \
         "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing1.conf" \
         "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing2.conf" \
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing3.conf" \
@@ -317,7 +317,7 @@ test_exits_on_mixed_file_and_symlink_conflicts() {
     create_test_file "$TEST_CONFIG_HOME/source3.conf" "test content 3"
     create_test_file "$TEST_CONFIG_HOME/source4.conf" "test content 4"
     
-    dk_safe_symlink \
+    dk ln \
         "$TEST_CONFIG_HOME/source1.conf" "$TEST_CONFIG_HOME/app1/existing_file1.conf" \
         "$TEST_CONFIG_HOME/source2.conf" "$TEST_CONFIG_HOME/app1/existing_symlink1.conf" \
         "$TEST_CONFIG_HOME/source3.conf" "$TEST_CONFIG_HOME/app2/existing_file2.conf" \
@@ -343,7 +343,7 @@ test_exits_on_mixed_file_and_symlink_conflicts() {
 test_creates_single_symlink() {
     setup
     
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify symlink was created correctly
@@ -362,7 +362,7 @@ test_creates_single_symlink() {
 test_creates_multiple_symlinks() {
     setup
     
-    dk_safe_symlink \
+    dk ln \
         "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config1.conf" \
         "$FIXTURES_DIR/test_sources/config2.conf" "$TEST_CONFIG_HOME/app2/config2.conf" \
         >/dev/null 2>&1
@@ -380,7 +380,7 @@ test_creates_multiple_symlinks() {
 test_creates_target_directories() {
     setup
     
-    dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/new_app/subdir/config.conf" >/dev/null 2>&1
+    dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/new_app/subdir/config.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify directory was created and symlink exists
@@ -397,7 +397,7 @@ test_rejects_empty_arguments() {
     setup
     
     local result
-    result=$(dk_safe_symlink 2>/dev/null; echo $?)
+    result=$(dk ln 2>/dev/null; echo $?)
     assert_equals 1 "$result"
     
     teardown
@@ -407,7 +407,7 @@ test_rejects_odd_number_of_arguments() {
     setup
     
     local result
-    result=$(dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" 2>/dev/null; echo $?)
+    result=$(dk ln "$FIXTURES_DIR/test_sources/config1.conf" 2>/dev/null; echo $?)
     assert_equals 1 "$result"
     
     teardown
@@ -423,7 +423,7 @@ test_handles_broken_symlink_targets() {
     # Create a source file within config home for this test
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
-    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/broken.conf" >/dev/null 2>&1
+    dk ln "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/broken.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify symlink was updated
@@ -454,7 +454,7 @@ test_associative_array_function() {
         ["$TEST_CONFIG_HOME/source2.conf"]="$TEST_CONFIG_HOME/app2/config2.conf"
     )
     
-    dk_safe_symlink_array symlink_map >/dev/null 2>&1
+    dk ln symlink_map >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify both symlinks were created
@@ -475,7 +475,7 @@ test_fallback_prompt_yes() {
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
     # Test without conflicts (no prompt needed) - this tests that the function works when gum is missing
-    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/new.conf" >/dev/null 2>&1
+    dk ln "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/new.conf" >/dev/null 2>&1
     assert_equals 0 $?
     
     # Verify symlink was created
@@ -496,7 +496,7 @@ test_fallback_exits_on_file_conflict() {
     create_test_file "$TEST_CONFIG_HOME/source.conf" "test content"
     
     # File conflicts always exit with code 1, no user prompt
-    dk_safe_symlink "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
+    dk ln "$TEST_CONFIG_HOME/source.conf" "$TEST_CONFIG_HOME/app1/existing.conf" >/dev/null 2>&1
     assert_equals 1 $?
     
     teardown
@@ -511,7 +511,7 @@ test_debug_mode_logging() {
     # Capture debug output
     local output
     # shellcheck disable=SC2034
-    output=$(dk_safe_symlink "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" 2>&1)
+    output=$(dk ln "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_CONFIG_HOME/app1/config.conf" 2>&1)
     
     # Debug output goes to logger, so we just verify the function succeeds
     local result=$?

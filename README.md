@@ -1,56 +1,120 @@
 <img src="https://www.dotkit.app/dk-logo.svg" width="70" align="right">
 
-# dotkit 
-
-[![License](https://img.shields.io/badge/license-MIT-f59e42.svg?style=flat-square)](LICENSE)
+# dotkit
 
 > [!CAUTION]
 > dotkit is still in early development, and is not yet ready for use.
-> expect breaking changes and bugs.
+> expect breaking changes and bugs, the below is subject to change.
 
 ## overview
 
-a dotfiles approach that focuses on dotfile distribution and user profiles  
-this is simply a collection of scripts and a system design to support all dotfiles old and new to be:
+`dotkit` is a dotfiles manager designed for both dotfile maintainers and users.
 
-- easy to install
-- easy to maintain
-- easy to customize
-- easy to share
-- easy to switch between
+- **for maintainers:** extensible module system, developer-friendly api, profile isolation
+- **for users:** intelligent conflict resolution and easy import/export of configurations.
 
-imagine: grab dotfiles with one command, swap setups in a snap.  
-want to share or remix a theme? one command does it.  
+the project is built on four core principles:
 
-and the best part is you never worry about losing your custom configurations
+1. **dotkit api:** a simple, consistent api for module/dotfile developers featuring:
+2. **module system:** an extensible, language-agnostic component system using the above.
+3. **dotfiles layer:** standardized, community-driven dotfile configurations leveraging both the above.
+   - dotkit provides some [core modules](#core-modules) for optional, but common functionality
+4. **user profiles:** composable user-specific customizations, the users home for all things dotfiles.
 
-eg.\
-`dk install <github dotfile url>`\
-`dk theme install <github dotfile theme url>`
+in the end, dotkit is what users interact with to install, manage, and configure their dotfiles.
 
-## how does it work?
+## api summary
 
-dotkit uses what i'm going to called a "layered desktop environment" approach.
+`dotkit` provides a rich set of bash helper functions for module & dotfile developers:
 
-- the "base" layer is the tooling dotkit provides to start up and maintain your own dotfiles
-- the "dotfiles" layer is the dotfiles layer with your own or community dotfiles applied
-- the "themes" layer is the optional layer with a theme applied (if your dotfiles support theming)
-- the final "profile" layer is the user profile layer with a user profile applied
+- **event management:**:
+  - dotfiles/modules/users can call scripts on install, set, update, etc.
+  - dotfile -> module -> user - user overrides default behavior
+- **file & symlink helpers:**
+  - `dk_link`: creates symlinks with advanced conflict resolution. can take an associative array for batch linking.
+  - `dk_unlink`
+  - `dk_exists`, `dk_is_link`: check file status.
+- **logging helpers:** `dk_log`, `dk_warn`, `dk_error`, `dk_success` for structured, color-coded output.
+- **user interaction:** `dk_ask`, `dk_choose`, `dk_input` for advanced user prompts using gum
+- **environment management:**  scripts have access to the full environment, including variables from the parent shell and all active modules
+  - core paths `DK_CONFIG`, `DK_DOTFILE`, etc.
+  - behavior flags `DK_INTERACTIVE`
+  - all functions from dotkit, dotfile, and module scripts
 
-the "base" layer is dotkit itself, providing scripts and hooks to make up the system design
+## dotkit.toml
 
-the "dotfiles" layer is the dotkit community, providing a collection of dotfiles and a way to install them
+dotfiles, profiles, and modules will all be able to define their own configurations in a `dotkit.toml` file.
 
-user profiles are your own personal customizations to all the other layers
+- metadata
+- files - symlink definitions
+- events - scripts to call on install, set, update, etc.
 
-all work together to create a "current" layer, which is your active system.
+## module system design
 
-in the end, the user has full control over their system
+the module system is the core of `dotkit`'s extensibility.
+dotfiles will be able to install modules from the community to handle common tasks that end up being repeated across dotfiles.
 
-## so whats next?
+- **core principles:** modules are language-agnostic (any script with a shebang / bash callable), extensible, annd self-contained
 
-first step is making the dk cli\
-then i need to make an initial dotfile template, most likely a hyprland one\
-i plan to migrate other successful dotfiles to dotkit, with as much feature parity as possible
+## cli interface
 
-you can follow [todo](todo.md) to get a grasp of my goals and progress for this project
+dotkit operates as a command-line tool with the module functions available through the module system:
+
+```bash
+# dotfile management
+dotkit install github:user/my-dotfile  # install dotfile repository & immediately set as current
+dotkit dotfile set my-dotfile          # set current dotfile to my-dotfile
+dotkit unset dotfile                   # unsets current dotfile & profile
+
+# profile management  
+dotkit profile set dev               # switch to dev profile
+dotkit profile unset                 # unsets current profile (using dotfile defaults)
+```
+
+## example user experience
+
+```bash
+# user installs hyde dotfiles
+dotkit install github:hyde-project/hyde
+# ...installs packages, some interactive prompts...
+
+# hyde cli is automatically available
+hyde theme list
+hyde theme set catppuccin-mocha
+hyde update
+hyde status
+
+# dotkit commands still work
+dotkit profile set gaming
+dotkit dotfile set my-dotfile # changes from hyde to my-dotfile
+
+# hybrid commands work with hyde branding
+hyde set  # uses hyde's custom set command
+dotkit set  # uses dotkit's default set command
+```
+
+## marketplace
+
+dotkit provides a centralized module registry and marketplace for dotfile maintainers to create cohesive, user-friendly configurations.
+
+maintainers will be able to upload dotfiles and modules to the registry, and users will be able to install and update them with ease.
+
+## status
+
+![progress-bar](https://progress-bar.xyz/1/?width=1000)
+> see [#todo](./todo.md) for more info on progress
+
+## documentation - wip
+
+- [docs](./docs/docs.md)
+- [dotfiles](./docs/dotfiles.md)
+- [profiles](./docs/profiles.md)
+- [modules](./docs/modules.md)
+- [goals](./docs/goals.md)
+- [marketplace](./docs/marketplace.md)
+
+### core modules
+
+- [package management](docs/modules/packages.md)
+- [gpu management](docs/modules/gpu.md)
+- [system detection](docs/modules/system.md)

@@ -1,6 +1,12 @@
-# Dotkit Marketplace Development Roadmap 🏪
+<img src="https://www.dotkit.app/dk-logo.svg" width="70" align="right">
 
-## Tech Stack
+# dotkit marketplace
+
+> [!CAUTION]
+> dotkit is still in early development, and is not yet ready for use.
+> expect breaking changes and bugs, the below is subject to change.
+
+## tech stack
 
 - [Next.js](https://nextjs.org) - React framework
 - [Drizzle](https://orm.drizzle.team) - TypeScript ORM
@@ -9,49 +15,49 @@
 - [NextAuth.js](https://next-auth.js.org) - Authentication
 - [TypeScript](https://www.typescriptlang.org) - Type safety
 
-## Development Phases
+## development phases
 
-### Phase 1: MVP Foundation
+### phase 1: mvp foundation
 
-- [ ] Initialize T3 project with create-t3-app
-- [ ] Set up Drizzle schema and migrations
-  - Start with users and modules tables only
-- [ ] Basic GitHub OAuth integration
-- [ ] Minimal layout with navigation
-- [ ] Simple Vercel deployment
+- [ ] initialize t3 project with create-t3-app
+- [ ] set up drizzle schema and migrations
+  - start with users and modules tables only
+- [ ] basic github oauth integration
+- [ ] minimal layout with navigation
+- [ ] simple vercel deployment
 
-### Phase 2: Essential Features
+### phase 2: essential features
 
-- [ ] Basic User Management
-  - [ ] GitHub login
-  - [ ] Simple profile page
-- [ ] Core Module Management
-  - [ ] Basic module submission form
-  - [ ] Module listing page
-  - [ ] Simple version tracking
-- [ ] Basic Search
-  - [ ] Text search
-  - [ ] Simple category filter
+- [ ] basic user management
+  - [ ] github login
+  - [ ] simple profile page
+- [ ] core module management
+  - [ ] basic module submission form
+  - [ ] module listing page
+  - [ ] simple version tracking
+- [ ] basic search
+  - [ ] text search
+  - [ ] simple category filter
 
-### Phase 3: Community MVP
+### phase 3: community mvp
 
-- [ ] Basic Engagement Features
-  - [ ] Star modules
-  - [ ] Simple comments
-- [ ] Collections v1
-  - [ ] Create personal collections
-  - [ ] Add/remove modules
+- [ ] basic engagement features
+  - [ ] star modules
+  - [ ] simple comments
+- [ ] collections v1
+  - [ ] create personal collections
+  - [ ] add/remove modules
 
-### Phase 4: Developer Experience
+### phase 4: developer experience
 
-- [ ] Basic Documentation
-  - [ ] Integration guide
-  - [ ] API documentation
-- [ ] Simple CLI Tool
-  - [ ] Module installation
-  - [ ] Basic publishing
+- [ ] basic documentation
+  - [ ] integration guide
+  - [ ] api documentation
+- [ ] simple cli tool
+  - [ ] module installation
+  - [ ] basic publishing
 
-## Database Schema
+## database schema
 
 ```typescript
 // User schema
@@ -108,9 +114,9 @@ export const collectionItems = pgTable("collection_items", {
 });
 ```
 
-## API Routes
+## api routes
 
-### Module Management
+### module management
 
 ```typescript
 // Example tRPC router for modules
@@ -138,29 +144,29 @@ export const moduleRouter = createTRPCRouter({
 });
 ```
 
-## Frontend Components
+## frontend components
 
-### Core Components
+### core components
 
-- ModuleCard
-- SearchBar
-- FilterPanel
-- UserProfile
-- ModuleSubmissionForm
-- ReviewComponent
-- CollectionGrid
+- modulecard
+- searchbar
+- filterpanel
+- userprofile
+- modulesubmissionform
+- reviewcomponent
+- collectiongrid
 
-### Pages
+### pages
 
-- Home/Discovery
-- Module Details
-- User Profile
-- Submit Module
-- Collection View
-- Search Results
-- Documentation
+- home/discovery
+- module details
+- user profile
+- submit module
+- collection view
+- search results
+- documentation
 
-## Architecture
+## architecture
 
 ```mermaid
 graph TD
@@ -179,7 +185,7 @@ graph TD
     API --> Cache
 ```
 
-### Next.js Configuration
+### next.js configuration
 
 ```javascript
 // next.config.js
@@ -190,16 +196,16 @@ module.exports = {
 }
 ```
 
-### Performance Optimizations (No Edge Functions)
+### performance optimizations (no edge functions)
 
-- React Query for client-side caching
-- Incremental Static Regeneration (ISR) for popular pages
-- Debounced search with client-side filtering
-- Optimistic UI updates
-- Efficient pagination with cursor-based queries
-- Background revalidation of static pages
+- react query for client-side caching
+- incremental static regeneration (isr) for popular pages
+- debounced search with client-side filtering
+- optimistic ui updates
+- efficient pagination with cursor-based queries
+- background revalidation of static pages
 
-### Rate Limiting Implementation
+### rate limiting implementation
 
 ```typescript:src/server/api/trpc.ts
 import { Redis } from '@upstash/redis'
@@ -234,90 +240,90 @@ const withRateLimit = t.middleware(async ({ ctx, next }) => {
 })
 ```
 
-## Deployment
+## deployment
 
-### Infrastructure
+### infrastructure
 
-- Vercel
-  - Next.js hosting
-  - API routes
-  - Edge functions (when needed)
-  - Automatic CI/CD
-  - Built-in monitoring
+- vercel
+  - next.js hosting
+  - api routes
+  - edge functions (when needed)
+  - automatic ci/cd
+  - built-in monitoring
 
-- Database
-  - Turso distributed SQLite
-  - Edge-hosted replicas
-  - Automatic backups
+- database
+  - turso distributed sqlite
+  - edge-hosted replicas
+  - automatic backups
 
-- Caching (Optional)
-  - Upstash Redis
-  - Vercel KV
+- caching (optional)
+  - upstash redis
+  - vercel kv
 
-### Monitoring & Operations
+### monitoring & operations
 
-- Application Monitoring
-  - Vercel Analytics
-  - Error tracking
-  - Performance monitoring
-  - Deployment logs
+- application monitoring
+  - vercel analytics
+  - error tracking
+  - performance monitoring
+  - deployment logs
 
-- Database Monitoring
-  - Turso dashboard
-  - Query performance
-  - Storage metrics
+- database monitoring
+  - turso dashboard
+  - query performance
+  - storage metrics
 
-- Backup Strategy
-  - Daily Turso backups
-  - Configuration backups
-  - Automated restore testing
+- backup strategy
+  - daily turso backups
+  - configuration backups
+  - automated restore testing
 
-### Cost Breakdown By Scale
+### cost breakdown by scale
 
-#### 0-5,000 Users/Month
+#### 0-5,000 users/month
 
-- Infrastructure
-  - Vercel: Free tier
-    - Includes hosting, functions, and analytics
-  - Turso: Free tier
-    - Metadata storage only (25M rows/month)
-  - Upstash Redis: Free tier (optional)
-Total: $0/month
+- infrastructure
+  - vercel: free tier
+    - includes hosting, functions, and analytics
+  - turso: free tier
+    - metadata storage only (25m rows/month)
+  - upstash redis: free tier (optional)
+total: $0/month
 
-#### 5,000-20,000 Users/Month
+#### 5,000-20,000 users/month
 
-- Infrastructure
-  - Vercel: Pro tier ($20/month)
-    - Required for increased usage
-  - Turso: Free tier (still within limits)
-  - Upstash Redis: Pro tier ($25/month, if needed)
-Total: $20-45/month
+- infrastructure
+  - vercel: pro tier ($20/month)
+    - required for increased usage
+  - turso: free tier (still within limits)
+  - upstash redis: pro tier ($25/month, if needed)
+total: $20-45/month
 
-#### 20,000-100,000 Users/Month
+#### 20,000-100,000 users/month
 
-- Infrastructure
-  - Vercel: Pro tier ($40/month)
-  - Turso: Pro tier ($29/month)
-    - Required for increased row limits
-  - Upstash Redis: Business tier ($50/month, if needed)
-Total: $69-119/month
+- infrastructure
+  - vercel: pro tier ($40/month)
+  - turso: pro tier ($29/month)
+    - required for increased row limits
+  - upstash redis: business tier ($50/month, if needed)
+total: $69-119/month
 
-## Future Enhancements
+## future enhancements
 
-### Phase 5: Advanced Features
+### phase 5: advanced features
 
-- [ ] Module dependency visualization
-- [ ] Automated testing integration
-- [ ] Module compatibility checking
-- [ ] Advanced search with Algolia
-- [ ] Real-time notifications
-- [ ] Module update webhooks
+- [ ] module dependency visualization
+- [ ] automated testing integration
+- [ ] module compatibility checking
+- [ ] advanced search with algolia
+- [ ] real-time notifications
+- [ ] module update webhooks
 
-### Phase 6: Enterprise Features
+### phase 6: enterprise features
 
-- [ ] Team accounts
-- [ ] Private modules
-- [ ] Custom branding
-- [ ] Analytics dashboard
-- [ ] API rate limiting
-- [ ] SLA guarantees
+- [ ] team accounts
+- [ ] private modules
+- [ ] custom branding
+- [ ] analytics dashboard
+- [ ] api rate limiting
+- [ ] sla guarantees

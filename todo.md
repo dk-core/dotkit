@@ -1,197 +1,12 @@
 <img src="https://www.dotkit.app/dk-logo.svg" width="70" align="right">
 
-# dotkit progress
+# todo
 
-- [dotkit progress](#dotkit-progress)
-  - [status](#status)
-  - [dk](#dk)
-  - [what does this look like in practice?](#what-does-this-look-like-in-practice)
-    - [how it works](#how-it-works)
-    - [what is the full plan of LDE, layered desktop environment?](#what-is-the-full-plan-of-lde-layered-desktop-environment)
-  - [user journeys](#user-journeys)
-  - [todo](#todo)
-    - [while below is in progress](#while-below-is-in-progress)
-      - [testing library](#testing-library)
-    - [scripts - 40%](#scripts---40)
-    - [configuration, init - 60%](#configuration-init---60)
-    - [dotfiles - hyprland template - 70%](#dotfiles---hyprland-template---70)
-    - [install script 50%](#install-script-50)
-    - [testing, lots of testing 60%](#testing-lots-of-testing-60)
-    - [dk (cli) - 70%](#dk-cli---70)
-    - [documentation - 80%](#documentation---80)
-    - [misc \& polish - 90%](#misc--polish---90)
-    - [final release (100%)](#final-release-100)
-    - [whats next?](#whats-next)
-  - [notepad](#notepad)
-  - [dk/hyde](#dkhyde)
-    - [what i plan to change / remove](#what-i-plan-to-change--remove)
-    - [what i plan on not changing](#what-i-plan-on-not-changing)
-    - [what is the completed result](#what-is-the-completed-result)
-    - [dk/hyde todo](#dkhyde-todo)
-      - [dk/hyde inventory](#dkhyde-inventory)
-      - [dk/hyde scripts and configs](#dkhyde-scripts-and-configs)
-      - [dk/hyde cli](#dkhyde-cli)
-      - [initialize content](#initialize-content)
+> [!CAUTION]
+> dotkit is still in early development, and is not yet ready for use.
+> expect breaking changes and bugs, the below is subject to change.
 
-## status
-
-![progress-bar](https://progress-bar.xyz/1/?width=1000)
-> see [#todo](#todo) for more info on progress
-
-## dk
-
-- [ ] add dotfile layer to below, then add to readme
-
-## what does this look like in practice?
-
-**file structure:**
-
-```bash
-~/.local/share/dk/
-├── current/
-│   ├── profile/ -> ~/.local/share/dk/profiles/my-custom-profile/
-│   ├── dotfile/ -> ~/.local/share/dk/dotfiles/my-dotfile/
-│   ├── mode (light/dark)
-│   └── wallpaper
-├── profiles/
-│   └── my-custom-profile/
-│       ├── lib/
-│       │   ├── dk.rofi.start.sh
-│       │   └── dk.waybar.start.sh
-│       └── waybar/
-│           └── modules/
-│               └── custom-module.json
-└── dotfile/
-    └── my-dotfile/
-        ├── lib/
-        │   ├── dk.dotfile.install.sh
-        │   ├── dk.dotfile.set.sh
-        │   └── dk.wallpaper.set.sh
-        ├── hypr/
-        │   └── hyprland.conf
-        ├── waybar/
-        │   └── config
-        ├── walls/
-        │   └── default.jpg
-        └── vars
-~/.config/waybar/
-├── config -> ~/.local/share/dk/profile/waybar/config
-└── modules/
-    └── custom-module.json -> ~/.local/share/dk/current/profile/waybar/modules/custom-module.json
-~/.config/hypr/
-└── hyprland.conf -> ~/.local/share/dk/current/dotfile/hypr/hyprland.conf
-~/.config/rofi/ (directory does not exist, as user has disabled rofi)
-~/.config/wofi/
-└── config -> ~/.local/share/dk/current/profile/wofi/config (example)
-```
-
-### how it works
-
-1. **dk base layer:** dk provides core functionalities and default scripts (e.g., in `$home/.local/share/dk/lib`).
-2. **dotfile layer (`my-dotfile`):** `~/.local/share/dk/current/dotfile/` symlinks to `~/.local/share/dk/dotfiles/my-dotfile/`. theme's `dk.theme.set.sh` symlinks its `hyprland.conf` to `~/.config/hypr/hyprland.conf` and `waybar/config` to `~/.config/waybar/config`.
-3. **themes layer (`my-theme`):** if the dotfiles support themes, `~/.local/share/dk/current/theme/` symlinks to `~/.local/share/dk/themes/my-theme/`. theme's `dk.theme.set.sh` symlinks its `hyprland.conf` to `~/.config/hypr/hyprland.conf` and `waybar/config` to `~/.config/waybar/config`.
-4. **user profile layer (`my-custom-profile`):** `~/.local/share/dk/current/profile/` symlinks to `~/.local/share/dk/profiles/my-custom-profile/`.
-    - **override rofi with wofi:** user creates `/lib/dk.rofi.start.sh` with `exit 0` (disabling rofi) and `/lib/dk.wofi.start.sh` (starting wofi). any config referencing `dk.rofi.start.sh` now calls `dk.wofi.start.sh`.
-    - **custom waybar module:** user places `custom-module.json` in `/waybar/modules/`. `/lib/dk.waybar.start.sh` loads theme's waybar config, modifies it to include the custom module, and symlinks the result to `~/.config/waybar/config`. this script overrides any theme/dk waybar script.
-
-### what is the full plan of LDE, layered desktop environment?
-
-1. **namespaced lifecycle hook system**
-   - runs as a systemd service for easy lifecycle management
-   - loads PATH, in order of hierarchy:
-     - `$HOME/.local/share/dk/lib"`
-     - `$HOME/dk/current/dotfile/lib"`
-     - `$HOME/dk/current/theme/lib"`
-     - `$HOME/dk/current/profile/lib"`
-     - (dk -> theme -> user) - user named scripts override all
-   - namespace system (*this will be subject to change*)
-     - `dk.<var>.*.sh`
-       - lib - lib namespace - anything dk needs to be sure is loaded first
-       - dotfile - dotfile namespace
-       - theme - theme namespace
-       - profile - profile namespace
-       - last name overwrites *all* - eg. user `dk.dotfile.set.sh` overrides theme `dk.dotfile.set.sh`
-     - `dk.*.<var>.sh`
-        - `start, restart, stop, status, set, next, prev`
-        - `install/uninstall` may become one but that may become too complex
-     - example: `dk.foo.restart.sh` -> restarts foo
-     - allows themes and users can define multiple apps into their own namespace
-     - these scripts can be referenced to configuration files provided in themes and user profiles
-     - `dk/lib` provides helper functions to help user and theme maintainers
-     - examples (both theme maintainers and users):
-       - "I want to override theme setting functionality"
-         - `dk.theme.set.sh` - revise to `~/.local/share/dk/(dotfiles/profiles/themes)/(my-dotfile/my-profile/my-theme)/lib/dk.theme.set.sh`
-       - "I want to use wofi instead of rofi"
-         - `dk.rofi.start.sh` - set to `exit 0` in `~/.local/share/dk/(profiles/themes)/(my-profile/my-theme)/lib/dk.rofi.start.sh`
-         - create `dk.wofi.start.sh` in `~/.local/share/dk/(profiles/themes)/(my-profile/my-theme)/lib/`
-         - set `dk.rofi.start.sh` to `dk.wofi.start.sh` in `~/.local/share/dk/(profiles/themes)/(my-profile/my-theme)/lib/dk.rofi.start.sh`
-
-2. **namespaced dotfiles system**
-   - dotfiles system will
-
-3. **namespaced theme system**
-   - theme system will be namespaced to allow for easier extension of dk.
-   - paths:
-     - `~/.local/share/dk/current/wallpaper` - path to the current wallpaper
-   - paths for theme maintainers:
-     - `~/.local/share/dk/current/theme/` - symlinked folder to `~/.local/share/dk/themes/`
-     - `~/.local/share/dk/current/theme/lib` - allows for themes to add lib functions to dk
-       - important files:
-       - `~/.local/share/dk/current/theme/dk.theme.install.sh` - installs the theme - anything required for the theme to work
-       - `~/.local/share/dk/current/theme/dk.theme.set.sh` - sets the theme
-       - `~/.local/share/dk/current/theme/dk.wallpaper.set.sh` - sets the wallpaper
-     - `~/.local/share/dk/current/theme/mode` - `dark/light` mode for the theme, sets `~/.local/share/dk/current/mode`
-     - `~/.local/share/dk/current/theme/walls/` - wallpapers
-     - `~/.local/share/dk/current/theme/vars`
-       - variables for the theme. defaults are gtk theme, font, cursor, icons. additional variables can be added but can cause collisions
-     - `~/.local/share/dk/current/theme/*/*` - any files in folders can be referenced by the theme
-        - example: `~/.local/share/dk/current/theme/waybar/*` can be symlinked to `~/.config/waybar/*`
-        - themes and profiles will use their own custom `dk.theme.set.sh` and `dk.profile.set.sh` to create the theme in the right directories
-
-4. **user profile system**
-   - same namespace system as themes, but for user profiles
-   - user profiles will be stored in `~/.local/share/dk/profiles/`.
-   - `~/.local/share/dk/current/profile/` - symlinked folder to `~/.local/share/dk/profiles/`
-   - ensures user configurations are on top of dk and theming
-   - users allowed to have multiple profiles
-   - designed to modify `/currrent/*` namespace, allowing users to modify themes
-   - user lib functions for each app will be stored in `~/.local/share/dk/profiles/*/lib/`.
-
-## user journeys
-
-here are some needs users will have, the goal is to meet them with the proposed changes, you'll notice some duplicates!
-
-- **dotfiles maintainers:**
-  - "I want to be able to diagnose issues that have been caused by my dotfilesalone and not have to worry about theme and user configurations."
-  - "I want easy to read diffs while updating and not have to worry about tooling."
-  - "I want to be able to test dotfiles via ci/cd"
-  - "I want to control when scripts are run in the lifecycle the users system"
-
-- **themes maintainers:**
-  - "I want my theme to have ***x*** app instead of ***y*** dotfiles default."
-  - "I want dotfiles updates to not break my theme."
-  - "I want to use a different wallpaper backend."
-  - "I want to use something other than bash!"
-
-- **users:**
-  - "I want my *system* to have ***x*** app instead of ***y*** dotfiles default."
-  - "I like all the themes, but I want them to use ***my*** app instead of ***their*** app/icon/theme/etc."
-  - "I like this from a theme and that from another theme"
-  - "I want to use a different wallpaper backend."
-  - "I don't want to have to maintain a theme in order to get the configuration I want"
-  - "I want the same/different fonts for gtk/bar/
-  - "I want to control when scripts are run in the lifecycle of *my* system"
-  - "I want to use something other than bash!"
-
-## todo
-
-### while below is in progress
-
-#### testing library
-
-in order for dk to maintained long term, dk needs a fully integrated testing library\
-some scripts can run via github actions headlessly, while others will require a graphical target\
-additionally, users need to have checks and balances to ensure dk is working as intended on their system, at runtime (more on the [dk cli](#dk-cli---70) section)
+## testing library
 
 - using bashunit for bash testing
 
@@ -199,314 +14,72 @@ additionally, users need to have checks and balances to ensure dk is working as 
 - [ ] programs installed correctly
 - [ ] scripts produce expected output
 
-### scripts - 40%
+## scripts - 40%
 
-- history command?
-  - track commands for symlinks and show what happened, ability to undo up to the last 5 maybe
+- [x] safe symlink function - [dk ln](./src/lib/dk_safe_symlink.sh)
+- [x] logging & printing functions - [dk log](./src/lib/dk_logging.sh)
 
-- [ ] lib, helper functions
-  - [x] safe symlink function - [dk ln](./src/lib/dk_safe_symlink.sh)
-  - [x] logging & printing functions - [dk log](./src/lib/dk_logging.sh)
-  
-  - [ ] add commands folder, revise build script
-  - [ ] rename scripts, remove dk prefix
-  - [ ] rename `dk ln` to `dk link`
-  - [ ] better test system
-  - [ ] command arg handler
-  - [ ] command flag handler
-  - [ ] logging command & args
-  - [ ] `dn ln` infers type, associative array or list of args
-  - [ ] args for `dn ln`
-    - dry-run
-    - force
-    - non-interactive
-  - [ ] fix `dn ln` test printing
-  - style gum confirm
-  - remove theme layer, as we can support themes without it
-    - themes go in the dotfiles dir, gitignored
+- [ ] add commands folder, revise build script
+- [ ] rename scripts, remove dk prefix
+- [ ] rename `dk ln` to `dk link`
+- [ ] better test system
+- [ ] command arg handler
+- [ ] command flag handler
+- [ ] logging command & args
+- [ ] `dn ln` infers type, associative array or list of args
+- [ ] args for `dn ln`
+  - dry-run
+  - force
+  - non-interactive
+- [ ] fix `dn ln` test printing
+- style gum confirm
+- remove theme layer, as we can support themes without it
+  - themes go in the dotfiles dir, gitignored
 
-  - [ ] status script
-    - [ ] small version print
+init:
 
-      ```bash
-      dk_version() {
-        echo "dotkit v$(cat $DK_ROOT/VERSION)"
-      }
-      ```
+- [x] setup nix development environment with direnvs
+- [x] implement basic logging system (`dk_log`, `dk_warn`, `dk_error`, `dk_success`, `dk_fail`)
+- [x] implement basic symlink management (`dk_link`, `dk_unlink`)
+- [ ] implement file system helpers (`dk_exists`, `dk_is_link`)
+- [ ] implement environment management (`dk.env.set.sh`, `dk.env.unset.sh`)
+- [ ] add intelligent conflict resolution (file vs symlink handling)
+- [ ] implement module priority system (profile → dotfile)
 
-    - [ ] shows current dotfile
+testing:
 
-      ```bash
-      dk_current_dotfile() {
-        readlink "$HOME/.local/share/dk/current/dotfile" | basename
-      }
-      ```
+- [ ] setup bashunit testing framework
 
-    - [ ] shows current profile
+toml:
 
-      ```bash
-      dk_current_profile() {
-        readlink "$HOME/.local/share/dk/current/profile" | basename
-      }
-      ```
+- [ ] implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+- [ ] implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
+- [ ] toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
+- [ ] implement automatic module discovery and execution based on `module.toml` `dotfile.toml` `profile.toml`
 
-    - [ ] shows current theme
+first run:
 
-      ```bash
-      dk_current_theme() {
-        readlink "$HOME/.local/share/dk/current/theme" | basename
-      }
-      ```
+- [ ] make a module that prints hello world
+- [ ] make a dotfile that uses the module
+- [ ] make a profile that overrides the module
 
-    - [ ] shows symlink status of dotfiles shorthand
+- [ ] make a module that makes a config for some program
 
-      ```bash
-      dk_config_status() {
-        # check ~/.config/* symlinks and files
-        # show broken/missing/valid status
-        # colorized output
-      }
-      ```
+hello world release:
 
-    - [ ] minified error output if any
+- [ ] releaserc with commitlint, semantic-release, and changelog
+- [ ] setup package distribution (aur, homebrew, etc.)
+- [ ] create automated release pipeline
 
-      ```bash
-      dk_errors() {
-        journalctl --user -t dk -p err --since "1 hour ago" --no-pager -q
-      }
-      ```
+hello world guides:
 
-    - [ ] disclaimer for dotfiles & themes
+- [ ] revamp dotkit-web to fumadocs
+- [ ] start creating core api documentation
+- [ ] start making guides for dotfile development
 
-      ```bash
-      dk_disclaimer() {
-        echo "dotfile: $(dk_current_dotfile)"
-        echo "theme: $(dk_current_theme)"
-        echo "profile: $(dk_current_profile)"
-      }
-      ```
+- [ ] dotkit state `~/.local/state/dotkit/`
 
-    - [ ] dotfile/theme status --diff for showing diffable view that can be compared to default dotfile/theme
-
-      ```bash
-      dk_status_diff() {
-        # compare current config with default
-        # show only differences
-        # machine readable format
-      }
-      ```
-
-  - [ ] tools for dotfile maintainers
-
-    - [ ] dotfile/theme installation
-
-      ```bash
-      dk_install_dotfile() {
-        local dotfile_path="$1"
-        # validate dotfile structure
-        # run dk.dotfile.install.sh if present
-        # setup symlinks
-      }
-      ```
-
-    - [ ] set dotfile/theme
-
-      ```bash
-      dk_set_dotfile() {
-        local dotfile_name="$1"
-        # update current/dotfile symlink
-        # run dk.dotfile.set.sh
-        # reload configs
-      }
-      ```
-
-    - [ ] update dotfile/theme
-
-      ```bash
-      dk_update_dotfile() {
-        # git pull or download updates
-        # run migration scripts
-        # preserve user customizations
-      }
-      ```
-
-    - [ ] migration tool
-
-      ```bash
-      dk_migrate() {
-        local from_version="$1" to_version="$2"
-        # backup current config
-        # run version-specific migration scripts
-        # validate migration success
-      }
-      ```
-
-    - [ ] supporting cross-distros & package management
-  
-      - [ ] supported systems
-
-        ```bash
-        dk_check_system() {
-          # detect os, desktop environment
-          # check required dependencies
-          # return compatibility status
-        }
-        ```
-
-      - [ ] cross-distro package management
-        - [ ] leverage existing tools: use `command -v` for detection, `/etc/os-release` for distro id
-
-          ```bash
-          dk_distro() {
-            source /etc/os-release
-            echo "$ID"
-          }
-          ```
-
-        - [ ] minimal dk helpers: `dk_distro()` returns id, `dk_has_cmd()` checks package managers
-
-          ```bash
-          dk_has_cmd() {
-            command -v "$1" >/dev/null 2>&1
-          }
-          
-          dk_package_manager() {
-            if dk_has_cmd pacman; then echo "pacman"
-            elif dk_has_cmd apt; then echo "apt"
-            elif dk_has_cmd dnf; then echo "dnf"
-            elif dk_has_cmd zypper; then echo "zypper"
-            else echo "unknown"; fi
-          }
-          ```
-
-        - [ ] dotfile maintainers handle mapping: they provide distro-specific package lists in install scripts
-
-          ```bash
-          # in dotfile's dk.dotfile.install.sh:
-          case "$(dk_distro)" in
-            arch) packages="hyprland waybar rofi" ;;
-            ubuntu) packages="hyprland waybar rofi-wayland" ;;
-            fedora) packages="hyprland waybar rofi" ;;
-          esac
-          ```
-
-        - [ ] get user packages
-
-          ```bash
-          dk_user_packages() {
-            case "$(dk_package_manager)" in
-              pacman) pacman -Qqe ;;
-              apt) apt list --installed ;;
-              dnf) dnf list installed ;;
-            esac
-          }
-          ```
-
-        - [ ] diff packages with dotfiles/themes/profiles
-
-          ```bash
-          dk_diff_packages() {
-            # compare packages with dotfile/theme/profile
-            # show differences
-          }
-          ```
-
-- [ ] "current" system
-
-  ```bash
-  # ~/.local/share/dk/current/ structure management
-  dk_current_init() {
-    mkdir -p "$HOME/.local/share/dk/current"
-    # create symlinks to active dotfile/theme/profile
-  }
-  
-  dk_current_switch() {
-    local type="$1" name="$2"  # dotfile/theme/profile
-    # update symlink atomically
-    # trigger reload hooks
-  }
-  ```
-
-- [ ] namespace hook system
-
-  ```bash
-  # script loading hierarchy: dk -> dotfile -> theme -> profile
-  dk_load_hooks() {
-    local namespace="$1" action="$2"  # e.g. "waybar" "start"
-    
-    # search path in order
-    for path in "$DK_LIB" "$DK_CURRENT/dotfile/lib" "$DK_CURRENT/theme/lib" "$DK_CURRENT/profile/lib"; do
-      local script="$path/dk.$namespace.$action.sh"
-      [[ -x "$script" ]] && { exec "$script"; return; }
-    done
-  }
-  ```
-
-- [ ] dotfile layer
-
-  ```bash
-  # dotfile management and symlink creation
-  dk_dotfile_apply() {
-    local dotfile="$1"
-    # symlink configs to ~/.config/
-    # run dk.dotfile.set.sh
-    # update current/dotfile pointer
-  }
-  
-  dk_dotfile_list() {
-    ls "$HOME/.local/share/dk/dotfiles/"
-  }
-  ```
-
-- [ ] theme layer
-
-  ```bash
-  # theme system with wallpaper and styling
-  dk_theme_apply() {
-    local theme="$1"
-    # run dk.theme.set.sh
-    # update wallpaper
-    # apply gtk/qt themes
-  }
-  
-  dk_theme_wallpaper() {
-    local wallpaper="$1"
-    # set wallpaper via backend
-    # update current/wallpaper
-  }
-  ```
-
-- [ ] profile layer
-
-  ```bash
-  # user customization layer on top of themes
-  dk_profile_apply() {
-    local profile="$1"
-    # run dk.profile.set.sh
-    # override theme settings
-    # custom app configurations
-  }
-  
-  dk_profile_create() {
-    local name="$1"
-    mkdir -p "$HOME/.local/share/dk/profiles/$name/lib"
-  }
-  ```
-
-- [ ] status script
-
-  ```bash
-  dk_status() {
-    dk_version
-    echo "dotfile: $(dk_current_dotfile)"
-    echo "theme: $(dk_current_theme)"
-    echo "profile: $(dk_current_profile)"
-    dk_symlink_status
-    dk_errors
-  }
-  ```
-
-### configuration, init - 60%
+## configuration, init - 60%
 
 - [ ] setup dkvm for dev
   - [ ] quickemu??
@@ -533,28 +106,30 @@ additionally, users need to have checks and balances to ensure dk is working as 
 - [ ] fully configure an initial dotfiles using the new model
 - [ ] build scripts for install, set, update
 
-### dotfiles - hyprland template - 70%
+## dotfiles - hyprland template - 70%
 
 - [ ] move dotfiles to new template
 
-### install script 50%
+## install script 50%
 
 - [ ] install script for dotfiles, using the template
 - [ ] create dkvm
 - [ ] test install on bare metal
 
-### testing, lots of testing 60%
+## testing, lots of testing 60%
 
 - desktop (intelcpu, amdgpu, nvidiagpu)
 - thinkpad (intelcpu)
 - laptop (intelcpu, nvidiagpu)
 
-### dk (cli) - 70%
+will test on arch, debian, fedora, ubuntu, and nixos
+
+## dk (cli) - 70%
 
 bare bones cli for dk, just pulls in existing scripts in path and runs them
 dotfiles / themes / users can use dotkit in their own bash scripts
 
-### documentation - 80%
+## documentation - 80%
 
 - [ ] revised readme
 - [ ] dotkit guide
@@ -562,11 +137,11 @@ dotfiles / themes / users can use dotkit in their own bash scripts
 - [ ] user profile guide
 - [ ] website
 
-### misc & polish - 90%
+## misc & polish - 90%
 
-### final release (100%)
+## final release (100%)
 
-### whats next?
+## whats next?
 
 - more templates
   - niri
