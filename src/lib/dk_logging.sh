@@ -11,9 +11,9 @@ dk_error() {
 }
 
 dk_debug() { 
-    if [[ ${DK_DEBUG:-} ]]; then
+    if [[ "${DK_DEBUG:-}" == "1" ]]; then
         logger -t dk "DEBUG: $*" 2>/dev/null || true
-        echo "[dk] DEBUG: $*"
+        echo "[dk] DEBUG: $*" >&2
     fi
 }
 

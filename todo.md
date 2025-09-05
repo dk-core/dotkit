@@ -6,49 +6,25 @@
 > dotkit is still in early development, and is not yet ready for use.
 > expect breaking changes and bugs, the below is subject to change.
 
-## testing library
-
-- using bashunit for bash testing
-
-- [ ] headless installation of dotfiles
-- [ ] programs installed correctly
-- [ ] scripts produce expected output
-
 ## scripts - 40%
 
-- [x] safe symlink function - [dk ln](./src/lib/dk_safe_symlink.sh)
-- [x] logging & printing functions - [dk log](./src/lib/dk_logging.sh)
+- [x] safe symlink function - [dk_link](./src/lib/dk_link.sh)
+- [x] logging & printing functions - [logging](./src/lib/dk_logging.sh)
+- [x] revise build script, main.sh
+- [x] better test runner, leverage flake checks, but allow direct running
 
-- [ ] add commands folder, revise build script
-- [ ] rename scripts, remove dk prefix
-- [ ] rename `dk ln` to `dk link`
-- [ ] better test system
-- [ ] command arg handler
-- [ ] command flag handler
-- [ ] logging command & args
-- [ ] `dn ln` infers type, associative array or list of args
+- [ ] dotkit source command for use in bash scripts to source all dotkit functions
+
+- [ ] `dk_link` infers type allows associative arrays as input additionally
 - [ ] args for `dn ln`
   - dry-run
   - force
   - non-interactive
 - [ ] fix `dn ln` test printing
-- style gum confirm
-- remove theme layer, as we can support themes without it
-  - themes go in the dotfiles dir, gitignored
 
 init:
 
-- [x] setup nix development environment with direnvs
-- [x] implement basic logging system (`dk_log`, `dk_warn`, `dk_error`, `dk_success`, `dk_fail`)
-- [x] implement basic symlink management (`dk_link`, `dk_unlink`)
-- [ ] implement file system helpers (`dk_exists`, `dk_is_link`)
-- [ ] implement environment management (`dk.env.set.sh`, `dk.env.unset.sh`)
-- [ ] add intelligent conflict resolution (file vs symlink handling)
-- [ ] implement module priority system (profile → dotfile)
-
-testing:
-
-- [ ] setup bashunit testing framework
+- [ ] implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
 
 toml:
 
@@ -71,13 +47,14 @@ hello world release:
 - [ ] setup package distribution (aur, homebrew, etc.)
 - [ ] create automated release pipeline
 
-hello world guides:
+- [ ] dotkit state `~/.local/state/dotkit/`
+
+dotkit-web:
 
 - [ ] revamp dotkit-web to fumadocs
 - [ ] start creating core api documentation
 - [ ] start making guides for dotfile development
 
-- [ ] dotkit state `~/.local/state/dotkit/`
 
 ## configuration, init - 60%
 

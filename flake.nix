@@ -17,25 +17,22 @@
         pname = "dotkit";
         version = "0.1.0";
 
-        src = ./.;
+        src = ./src;
 
         buildInputs = with pkgs; [ bash ];
         propagatedBuildInputs = with pkgs; [ gum ];
 
         installPhase = ''
-          mkdir -p $out/bin $out/lib/dotkit
+          mkdir -p $out/bin $out/libexec/dotkit
+          cp -r $src/* $out/libexec/dotkit/
 
-          # Copy the entire lib directory structure
-          cp -r src/lib/* $out/lib/dotkit/
-
-          # Copy main script and make it executable
-          cp src/main.sh $out/bin/dotkit
+          # Create a wrapper script in $out/bin
+          cat <<EOF > $out/bin/dotkit
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec $out/libexec/dotkit/main.sh "\$@"
+          EOF
           chmod +x $out/bin/dotkit
-
-          # Update the base directory path and remove lib/ prefix from source statements
-          substituteInPlace $out/bin/dotkit \
-            --replace 'SRC_DIR="$(dirname "$(realpath "$0")")"' 'SRC_DIR="$(dirname "$(realpath "$0")")/../lib/dotkit"' \
-            --replace 'source "$SRC_DIR/lib/' 'source "$SRC_DIR/'
         '';
 
         meta = with pkgs.lib; {
@@ -43,6 +40,15 @@
           license = licenses.mit;
           platforms = platforms.linux;
         };
+      };
+
+      packages."x86_64-linux".tests = pkgs.writeShellApplication {
+        name = "run-tests";
+        runtimeInputs = with pkgs; [ bashunit ];
+        text = ''
+          cd ${./.}
+          bash ./src/tests/run_tests.sh
+        '';
       };
 
       devShells."x86_64-linux".default = pkgs.mkShell {
@@ -60,5 +66,22 @@
         # Make the built package available in the dev shell
         packages = [ (inputs.self.packages."x86_64-linux".default) ];
       };
+
+      checks."x86_64-linux".default =
+        pkgs.runCommand "flake-checks"
+          {
+            buildInputs = with pkgs; [ bashunit ];
+            src = ./src;
+          }
+          ''
+            # Copy the contents of the src directory
+            cp -r $src/. $out
+
+            # Change to the tests directory and run the test runner
+            cd $out/tests
+            chmod +x run_tests.sh
+            bash ./run_tests.sh
+          '';
+
     };
 }

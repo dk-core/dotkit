@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# dk_safe_symlink.sh - Safe symlink creation for dotkit
+# dk_link.sh - Safe symlink creation for dotkit
 
 # Source logging functions
+# shellcheck source=dk_logging.sh
 source "$(dirname "${BASH_SOURCE[0]}")/dk_logging.sh"
 
-# dk_safe_symlink - Creates symlinks safely with validation and user prompts
-# Usage: dk_safe_symlink source1 target1 [source2 target2 ...]
-# Or with associative array: dk_safe_symlink_array
+# dk_link - Creates symlinks safely with validation and user prompts
+# Usage: dk_link source1 target1 [source2 target2 ...]
+# Or with associative array: dk_link_array
 # TODO: associative array should be the preferred method of interacting with dk
 # TODO: detect if input is associative array or list of args??
-dk_safe_symlink() {
+dk_link() {
+    dk_debug "Entering dk_link function"
     local -a sources=()
     local -a targets=()
     local -a missing_sources=()
@@ -18,14 +20,14 @@ dk_safe_symlink() {
     
     # Parse arguments into source/target pairs
     if [[ $# -eq 0 ]]; then
-        dk_error "No arguments provided to dk_safe_symlink"
-        dk_fail "Usage: dk_safe_symlink source1 target1 [source2 target2 ...]"
+        dk_error "No arguments provided to dk_link"
+        dk_fail "Usage: dk_link source1 target1 [source2 target2 ...]"
         return 1
     fi
     
     if [[ $((($# % 2))) -ne 0 ]]; then
         dk_error "Odd number of arguments provided - sources and targets must be paired"
-        dk_fail "Usage: dk_safe_symlink source1 target1 [source2 target2 ...]"
+        dk_fail "Usage: dk_link source1 target1 [source2 target2 ...]"
         return 1
     fi
     
@@ -38,52 +40,9 @@ dk_safe_symlink() {
     
     dk_debug "Processing ${#sources[@]} symlink pairs"
     
-    # Set XDG_CONFIG_HOME default if not set
-    local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
-    dk_debug "Using config home: $config_home"
-    
-    # Validate all targets are within XDG_CONFIG_HOME
-    local i
-    for i in "${!targets[@]}"; do
-        local target="${targets[$i]}"
-        local resolved_target
-        
-        # Resolve target path to absolute path
-        if [[ "$target" = /* ]]; then
-            resolved_target="$target"
-        else
-            resolved_target="$(pwd)/$target"
-        fi
-        
-        # Normalize path (remove .., ., etc.) without following symlinks
-        # Use a custom normalization that doesn't follow existing symlinks
-        local target_dir
-        target_dir="$(dirname "$resolved_target")"
-        local target_name
-        target_name="$(basename "$resolved_target")"
-        
-        # Normalize the directory path (this is safe even if it doesn't exist)
-        if [[ -d "$target_dir" ]]; then
-            target_dir="$(cd "$target_dir" && pwd)"
-        else
-            # For non-existent directories, use realpath -m on the directory part
-            target_dir="$(realpath -m "$target_dir")"
-        fi
-        
-        resolved_target="$target_dir/$target_name"
-        
-        # Check if target is within config_home
-        if [[ "$resolved_target" != "$config_home"* ]]; then
-            dk_error "Target path outside XDG_CONFIG_HOME: $target -> $resolved_target"
-            dk_fail "dk ln is not permitted to write outside of $config_home"
-            return 1
-        fi
-        
-        dk_debug "Target validated: $target -> $resolved_target"
-    done
     
     # Check if sources exist
-    for i in "${!sources[@]}"; do
+    for ((i=0; i<${#sources[@]}; i++)); do
         local source="${sources[$i]}"
         if [[ ! -e "$source" ]]; then
             missing_sources+=("$source")
@@ -145,19 +104,14 @@ dk_safe_symlink() {
     
     # Create symlinks
     local success_count=0
-    for i in "${!sources[@]}"; do
+    for ((i=0; i<${#sources[@]}; i++)); do
         local source="${sources[$i]}"
         local target="${targets[$i]}"
         
-        # Convert source to absolute path to avoid dead symlinks
-        local absolute_source
-        if [[ "$source" = /* ]]; then
-            absolute_source="$source"
-        else
-            absolute_source="$(realpath "$source")"
-        fi
+        # For debugging: use source directly, assuming it's absolute or relative to CWD
+        local absolute_source="$source"
         
-        dk_debug "Converting source path: $source -> $absolute_source"
+        dk_debug "Using source path directly: $source -> $absolute_source"
         
         # Create target directory if it doesn't exist
         local target_dir
@@ -171,12 +125,15 @@ dk_safe_symlink() {
             fi
         fi
         
-        # Create symlink with ln -sfn (force, no-dereference) using absolute source path
-        if ln -sfn "$absolute_source" "$target"; then
+        dk_debug "About to execute ln command: command ln -sfn '$absolute_source' '$target'"
+        if command ln -sfn "$absolute_source" "$target"; then
+            dk_debug "ln command successful. Exit code: $?"
             dk_success "Linked $absolute_source -> $target"
             dk_log "Created symlink: $absolute_source -> $target"
             success_count=$((success_count + 1))
         else
+            local ln_exit_code=$?
+            dk_debug "ln command failed. Exit code: $ln_exit_code"
             dk_error "Failed to create symlink: $absolute_source -> $target"
             dk_fail "Failed to link $absolute_source -> $target"
         fi
@@ -194,7 +151,7 @@ dk_safe_symlink() {
 }
 
 # Alternative function for associative arrays (bash 4+)
-dk_safe_symlink_array() {
+dk_link_array() {
     local map_name="$1"
     local -a args=()
     
@@ -205,5 +162,10 @@ dk_safe_symlink_array() {
         done
     "
     
-    dk_safe_symlink "${args[@]}"
+    dk_link "${args[@]}"
 }
+
+# Call dk_link function if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    dk_link "$@"
+fi
