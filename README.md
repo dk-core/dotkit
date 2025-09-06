@@ -6,6 +6,11 @@
 > dotkit is still in early development, and is not yet ready for use.
 > expect breaking changes and bugs, the below is subject to change.
 
+## status
+
+![progress-bar](https://progress-bar.xyz/1/?width=1000)
+> see [#todo](./todo.md) for more info on progress
+
 ## overview
 
 `dotkit` is a dotfiles manager designed for both dotfile maintainers and users.
@@ -23,6 +28,33 @@ the project is built on four core principles:
 
 in the end, dotkit is what users interact with to install, manage, and configure their dotfiles.
 
+## why?
+
+dotfiles offer a personalized experience, but they can be difficult to share and adapt. dotkit simplifies dotfile management, making it more efficient and enjoyable.
+
+ever wanted to try a program config for a day, or a full dotfile setup for a weekend? dotkit makes that possible.
+
+the end goal is to enable true multi-platform, multi-session, and multi-user dotfile management. reinstalling an entire OS just to try a new dotfile setup isn't sustainable. however, this is a community-driven effort, and we need your help to build using dotkit to make this a reality.
+
+dotkits modules extend beyond program configuration, offering a wide range of functionality from package management to system detection.
+
+dotkit is developing the following core modules:
+
+- [package management](docs/modules/packages.md)
+- [gpu management](docs/modules/gpu.md)
+- [system detection](docs/modules/system.md)
+- more to come!
+
+but these are just the beginning. build your own modules and share them with the community!
+some ideas:
+
+- session management
+- file locking with `chattr`
+- automated backups
+- theme management & switching
+
+anything you can do with on linux, you can do with dotkit.
+
 ## api summary
 
 `dotkit` provides a rich set of bash helper functions for module & dotfile developers:
@@ -32,10 +64,9 @@ in the end, dotkit is what users interact with to install, manage, and configure
   - dotfile -> module -> user - user overrides default behavior
 - **file & symlink helpers:**
   - `dk_link`: creates symlinks with advanced conflict resolution. can take an associative array for batch linking.
-  - `dk_unlink`
-  - `dk_exists`, `dk_is_link`: check file status.
+  - `dk_unlink` - deletes symlinks
 - **logging helpers:** `dk_log`, `dk_warn`, `dk_error`, `dk_success` for structured, color-coded output.
-- **user interaction:** `dk_ask`, `dk_choose`, `dk_input` for advanced user prompts using gum
+- **user interaction:** `dk_ask`, `dk_choose`, `dk_input` for advanced user prompts
 - **environment management:**  scripts have access to the full environment, including variables from the parent shell and all active modules
   - core paths `DK_CONFIG`, `DK_DOTFILE`, etc.
   - behavior flags `DK_INTERACTIVE`
@@ -99,11 +130,6 @@ dotkit provides a centralized module registry and marketplace for dotfile mainta
 
 maintainers will be able to upload dotfiles and modules to the registry, and users will be able to install and update them with ease.
 
-## status
-
-![progress-bar](https://progress-bar.xyz/1/?width=1000)
-> see [#todo](./todo.md) for more info on progress
-
 ## documentation - wip
 
 - [docs](./docs/docs.md)
@@ -112,9 +138,3 @@ maintainers will be able to upload dotfiles and modules to the registry, and use
 - [modules](./docs/modules.md)
 - [goals](./docs/goals.md)
 - [marketplace](./docs/marketplace.md)
-
-### core modules
-
-- [package management](docs/modules/packages.md)
-- [gpu management](docs/modules/gpu.md)
-- [system detection](docs/modules/system.md)

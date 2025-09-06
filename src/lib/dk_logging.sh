@@ -1,41 +1,60 @@
 #!/usr/bin/env bash
 # dk_logging.sh - Logging and printing utilities for dotkit
 
+# Gum styling environment variables
+export GUM_INPUT_FOREGROUND="#FF8C00" # Orange for primary color
+export GUM_SPIN_FOREGROUND="#FF8C00"
+export GUM_WRITE_FOREGROUND="#FF8C00"
+export GUM_CHOOSE_FOREGROUND="#FF8C00"
+export GUM_FILTER_FOREGROUND="#FF8C00"
+export GUM_CONFIRM_FOREGROUND="#FF8C00"
+export GUM_FILE_FOREGROUND="#FF8C00"
+export GUM_FORMAT_FOREGROUND="#FF8C00"
+export GUM_JOIN_FOREGROUND="#FF8C00"
+export GUM_PAGER_FOREGROUND="#FF8C00"
+export GUM_TABLE_FOREGROUND="#FF8C00"
+export GUM_TEXT_FOREGROUND="#FF8C00"
+
+# Helper function for consistent [dotkit] prefix styling
+_dk_prefix() {
+    gum style --foreground "#FF8C00" "[dotkit]"
+}
+
 # Logging functions (to system journal)
 dk_log() { 
-    logger -t dk "$*" 2>/dev/null || true
+    logger -t dotkit "$*" 2>/dev/null || true
 }
 
 dk_error() { 
-    logger -p user.err -t dk "ERROR: $*" 2>/dev/null || true
+    logger -p user.err -t dotkit "ERROR: $*" 2>/dev/null || true
 }
 
 dk_debug() { 
     if [[ "${DK_DEBUG:-}" == "1" ]]; then
-        logger -t dk "DEBUG: $*" 2>/dev/null || true
-        echo "[dk] DEBUG: $*" >&2
+        logger -t dotkit "DEBUG: $*" 2>/dev/null || true
+        echo "[dotkit] DEBUG: $*" >&2
     fi
 }
 
 dk_warn() { 
-    logger -p user.warning -t dk "WARN: $*" 2>/dev/null || true
+    logger -p user.warning -t dokit "WARN: $*" 2>/dev/null || true
 }
 
 # Print functions (immediate user feedback)
 dk_print() { 
-    echo "[dk] $*"
+    gum style "$(_dk_prefix) $*"
 }
 
 dk_status() { 
-    echo "[dk] status: $*"
+    gum style "$(_dk_prefix) status: $*"
 }
 
 dk_success() { 
-    echo -e "\033[32m[dk] ✓ $*\033[0m"
+    gum style --foreground "2" "$(_dk_prefix) ✓ $*"
 }
 
 dk_fail() { 
-    echo -e "\033[31m[dk] ✗ $*\033[0m" >&2
+    gum style --foreground "1" "$(_dk_prefix) ✗ $*" >&2
 }
 
 # Pretty print arrays as lists
@@ -49,9 +68,11 @@ dk_print_list() {
     fi
     
     if [[ -n "$title" ]]; then
-        echo -e "\033[1m$title\033[0m"
+        gum style --bold "$title"
     fi
-    printf '\033[36m  • %s\033[0m\n' "${items[@]}"
+    for item in "${items[@]}"; do
+        gum style --foreground "6" "  • $item"
+    done
 }
 
 # Pretty print warnings with lists
@@ -64,8 +85,10 @@ dk_warn_list() {
         return 0
     fi
     
-    echo -e "\033[33m\033[1m[dk] WARN: $title\033[0m"
-    printf '\033[33m  • %s\033[0m\n' "${items[@]}"
+    gum style --foreground "3" --bold "$(_dk_prefix) WARN: $title" >&2
+    for item in "${items[@]}"; do
+        gum style --foreground "3" "  • $item" >&2
+    done
     
     # Also log to system journal
     dk_warn "$title: ${items[*]}"
@@ -81,8 +104,10 @@ dk_error_list() {
         return 0
     fi
     
-    echo -e "\033[31m\033[1m[dk] ERROR: $title\033[0m" >&2
-    printf '\033[31m  • %s\033[0m\n' "${items[@]}" >&2
+    gum style --foreground "1" --bold "$(_dk_prefix) ERROR: $title" >&2
+    for item in "${items[@]}"; do
+        gum style --foreground "1" "  • $item" >&2
+    done
     
     # Also log to system journal
     dk_error "$title: ${items[*]}"

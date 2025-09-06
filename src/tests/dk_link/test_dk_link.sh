@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # test_ln.sh - Comprehensive tests for dk_link command
 
-
 # Source Validation Tests
 test_rejects_nonexistent_sources() {
     setup # Call setup from test_helper.sh

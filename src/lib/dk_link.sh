@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # dk_link.sh - Safe symlink creation for dotkit
 
-# Source logging functions
-# shellcheck source=dk_logging.sh
-source "$(dirname "${BASH_SOURCE[0]}")/dk_logging.sh"
-
 # dk_link - Creates symlinks safely with validation and user prompts
 # Usage: dk_link source1 target1 [source2 target2 ...]
 # Or with associative array: dk_link_array
@@ -25,7 +21,7 @@ dk_link() {
         return 1
     fi
     
-    if [[ $((($# % 2))) -ne 0 ]]; then
+    if [[ $(( $# % 2 )) -ne 0 ]]; then
         dk_error "Odd number of arguments provided - sources and targets must be paired"
         dk_fail "Usage: dk_link source1 target1 [source2 target2 ...]"
         return 1

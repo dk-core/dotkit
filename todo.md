@@ -8,90 +8,80 @@
 
 ## scripts - 40%
 
-- [x] safe symlink function - [dk_link](./src/lib/dk_link.sh)
-- [x] logging & printing functions - [logging](./src/lib/dk_logging.sh)
-- [x] revise build script, main.sh
-- [x] better test runner, leverage flake checks, but allow direct running
-
-- [ ] dotkit source command for use in bash scripts to source all dotkit functions
-
-- [ ] `dk_link` infers type allows associative arrays as input additionally
-- [ ] args for `dn ln`
+- `dk_link` infers type allows associative arrays as input additionally
+- more envs, used globally but implement in dk_link
   - dry-run
-  - force
-  - non-interactive
-- [ ] fix `dn ln` test printing
-
-init:
-
-- [ ] implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
+  - force / non-interactive
+- implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
+- event hooks, install/set/update/etc.
 
 toml:
 
-- [ ] implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
-- [ ] implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
-- [ ] toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
-- [ ] implement automatic module discovery and execution based on `module.toml` `dotfile.toml` `profile.toml`
+- implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+- implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
+- toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
+- implement automatic module discovery and execution based on
 
 first run:
 
-- [ ] make a module that prints hello world
-- [ ] make a dotfile that uses the module
-- [ ] make a profile that overrides the module
-
-- [ ] make a module that makes a config for some program
+- make a module that prints hello world
+- make a dotfile that uses the module
+- make a profile that overrides the module
 
 hello world release:
 
-- [ ] releaserc with commitlint, semantic-release, and changelog
-- [ ] setup package distribution (aur, homebrew, etc.)
-- [ ] create automated release pipeline
+- releaserc with commitlint, semantic-release, and changelog
+- setup package distribution (aur, homebrew, etc.)
+- create automated release pipeline
 
-- [ ] dotkit state `~/.local/state/dotkit/`
+dotkit cli:
+
+- dotkit status
+- dotkit source command for use in bash scripts to source all dotkit functions
+- dotkit state `~/.local/state/dotkit/`
 
 dotkit-web:
 
-- [ ] revamp dotkit-web to fumadocs
-- [ ] start creating core api documentation
-- [ ] start making guides for dotfile development
-
+- revamp dotkit-web to fumadocs
+- start creating core api documentation
+- start making guides for dotfile development
 
 ## configuration, init - 60%
 
-- [ ] setup dkvm for dev
-  - [ ] quickemu??
+- setup dkvm for dev
+  - quickemu??
 
 - no themes just dotfiles
 
-- [ ] hyprland config
-- [ ] waybar config
-- [ ] walker config
-- [ ] swaync config
-- [ ] gtk theme
-- [ ] font
-- [ ] icons
-- [ ] cursor
-- [ ] qt theme
+- hyprland config
+- waybar config
+- walker config
+- swaync config
+- gtk theme
+- font
+- icons
+- cursor
+- qt theme
 
 - hand feed dk configuration till its stable using new model
-  - [ ] shell
-  - [ ] hyprland
-  - [ ] waybar
-  - [ ] rofi
-  - [ ] hand feed wallbash template temporarily to catpuccino mocha
+  - shell
+  - hyprland
+  - waybar
+  - rofi
+  - hand feed wallbash template temporarily to catpuccino mocha
 
-- [ ] fully configure an initial dotfiles using the new model
-- [ ] build scripts for install, set, update
+- fully configure an initial dotfiles using the new model
+- build scripts for install, set, update
 
 ## dotfiles - hyprland template - 70%
 
-- [ ] move dotfiles to new template
+- move dotfiles to new template
 
 ## install script 50%
 
-- [ ] install script for dotfiles, using the template
-- [ ] create dkvm
-- [ ] test install on bare metal
+- install script for dotfiles, using the template
+- create dkvm
+- test install on bare metal
 
 ## testing, lots of testing 60%
 
@@ -108,11 +98,11 @@ dotfiles / themes / users can use dotkit in their own bash scripts
 
 ## documentation - 80%
 
-- [ ] revised readme
-- [ ] dotkit guide
-- [ ] theming guide
-- [ ] user profile guide
-- [ ] website
+- revised readme
+- dotkit guide
+- theming guide
+- user profile guide
+- website
 
 ## misc & polish - 90%
 
@@ -267,31 +257,31 @@ listing each app/feature and where it is configured as i go along
 
 scripts:
 
-- [ ] app restarts
-- [ ] wallpaper
-- [ ] waybar
-- [ ] dunst
-- [ ] gtk theme
-- [ ] font
-- [ ] icons
-- [ ] cursor
-- [ ] qt theme
+- app restarts
+- wallpaper
+- waybar
+- dunst
+- gtk theme
+- font
+- icons
+- cursor
+- qt theme
 
 configs:
 
-- [ ] hyprland
-- [ ] zsh
-- [ ] kitty
-- [ ] waybar
+- hyprland
+- zsh
+- kitty
+- waybar
 
 wallbash cli:
 
-- [ ] wallbash cli
+- wallbash cli
 
 #### dk/hyde cli
 
-- [ ] wrap dk cli in hyde cli with some special features relating to hyde
+- wrap dk cli in hyde cli with some special features relating to hyde
 
 #### initialize content
 
-- [ ] scripts can be made temporarily to revise existing themes to new format
+- scripts can be made temporarily to revise existing themes to new format

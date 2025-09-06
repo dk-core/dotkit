@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 # test_helper.sh - Global setup, teardown, and mock functions for bashunit tests
 
-# Get path to the lib directory relative to this script
-HELPER_DIR=$(dirname "${BASH_SOURCE[0]}")
-LIB_DIR="$HELPER_DIR/../lib"
-
-# Source global functions and variables
-# shellcheck source=../lib/dk_global.sh
-source "$LIB_DIR/dk_global.sh"
+# shellcheck source=../main.sh
+source "$DOTKIT_ROOT/main.sh" api source
 
 # Global setup for all tests
 global_setup() {
@@ -35,7 +30,6 @@ setup() {
     TEST_FILE_DIR="$(dirname "${BASH_SOURCE[1]}")"
     
     # Define FIXTURES_DIR relative to the test file's directory
-    # FIXTURES_DIR is used in test_dk_link.sh, so it needs to be exported
     export FIXTURES_DIR="$TEST_FILE_DIR/fixtures"
 }
 
