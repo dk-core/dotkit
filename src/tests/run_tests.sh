@@ -2,6 +2,8 @@
 # run_tests.sh - Discovers and runs all bashunit tests & show_ tests in the src/tests directory.
 set -euo pipefail
 
+DOTKIT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &>/dev/null && pwd)
+
 # shellcheck source=../main.sh
 source "$DOTKIT_ROOT/main.sh" api source
 # shellcheck source=test_helper.sh

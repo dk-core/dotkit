@@ -68,7 +68,7 @@ dk_print_list() {
     fi
     
     if [[ -n "$title" ]]; then
-        gum style --bold "$title"
+        gum style "$title"
     fi
     for item in "${items[@]}"; do
         gum style --foreground "6" "  • $item"
@@ -85,7 +85,7 @@ dk_warn_list() {
         return 0
     fi
     
-    gum style --foreground "3" --bold "$(_dk_prefix) WARN: $title" >&2
+    gum style --foreground "3" "$(_dk_prefix) WARN: $title" >&2
     for item in "${items[@]}"; do
         gum style --foreground "3" "  • $item" >&2
     done
@@ -104,7 +104,7 @@ dk_error_list() {
         return 0
     fi
     
-    gum style --foreground "1" --bold "$(_dk_prefix) ERROR: $title" >&2
+    gum style --foreground "1" "$(_dk_prefix) ERROR: $title" >&2
     for item in "${items[@]}"; do
         gum style --foreground "1" "  • $item" >&2
     done

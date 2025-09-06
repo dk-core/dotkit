@@ -11,15 +11,14 @@ command="${1:-}"
 subcommand="${2:-}"
 
 case "$command" in
-  tests)
-    # shellcheck source=tests/run_tests.sh
-    "$DOTKIT_ROOT/tests/run_tests.sh"
-  ;;
+  status)
+    echo "dotkit is a work in progress"
+    ;;
   api)
     case "$subcommand" in
       source)
         # shellcheck source=lib/dk_global.sh
-        source "$DOTKIT_ROOT/lib/dk_global.sh"
+        "$DOTKIT_ROOT/lib/dk_global.sh"
         ;;
       *)
         echo "Unknown command for 'dotkit api': ${subcommand}" >&2

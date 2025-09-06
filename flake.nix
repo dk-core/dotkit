@@ -32,7 +32,9 @@
             ]
           } )
           mkdir -p $out/bin $out/lib/dotkit
-          cp -r $src/* $out/lib/dotkit/
+
+          cp -r $src/lib $out/lib/dotkit/
+          cp -r $src/main.sh $out/lib/dotkit/
 
           # Create a wrapper script in $out/bin
           cat <<EOF > $out/bin/dotkit
@@ -54,10 +56,12 @@
         name = "run-tests";
         runtimeInputs = [
           dotkit
+          pkgs.bashunit
+          pkgs.gum
         ];
         text = ''
           cd ${./.}
-          dotkit tests
+          ./src/tests/run_tests.sh
         '';
       };
     in
