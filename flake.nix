@@ -61,7 +61,7 @@
         ];
         text = ''
           cd ${./.}
-          ./src/tests/run_tests.sh
+          bashunit
         '';
       };
     in
@@ -70,7 +70,11 @@
       packages."x86_64-linux".tests = dotkit_tests;
 
       devShells."x86_64-linux".default = pkgs.mkShell {
-        packages = [ dotkit ];
+        packages = [
+          dotkit
+          pkgs.bashunit
+          pkgs.gum
+        ];
       };
 
       checks."x86_64-linux".default = dotkit_tests;

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # test_helper.sh - Global setup, teardown, and mock functions for bashunit tests
 
+DOTKIT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &>/dev/null && pwd)
+export DOTKIT_ROOT
+
 # shellcheck source=../main.sh
 source "$DOTKIT_ROOT/main.sh" api source
 
@@ -9,7 +12,8 @@ global_setup() {
     # Create a temporary directory for all tests
     local temp_dir
     temp_dir="$(mktemp -d)"
-    export TEST_BASE_DIR="$temp_dir"
+    export TEST_BASE_DIR="$temp_dir/dotkit"
+    mkdir -p "$TEST_BASE_DIR"
     
     # Disable interactive prompts for testing
     export DEBIAN_FRONTEND=noninteractive
