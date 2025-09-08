@@ -8,39 +8,24 @@ export DOTKIT_ROOT
 source "$DOTKIT_ROOT/main.sh" api source
 
 # Global setup for all tests
-global_setup() {
+set_up_before_script() {
     # Create a temporary directory for all tests
-    local temp_dir
-    temp_dir="$(mktemp -d)"
-    export TEST_BASE_DIR="$temp_dir/dotkit"
-    mkdir -p "$TEST_BASE_DIR"
+    mkdir -p "$DOTKIT_ROOT/.test_temp"
+    TEST_BASE_DIR="$(mktemp -d "$DOTKIT_ROOT/.test_temp/test.XXXXXX")"
+    export TEST_BASE_DIR
     
     # Disable interactive prompts for testing
     export DEBIAN_FRONTEND=noninteractive
 }
 
 # Global teardown for all tests
-global_teardown() {
+tear_down_after_script() {
     [[ -n "$TEST_BASE_DIR" ]] && rm -rf "$TEST_BASE_DIR"
-}
-
-# Setup for individual test files
-setup() {
-    # Create a unique test directory for each test file
-    TEST_DIR="$TEST_BASE_DIR/$(date +%s%N)"
-    mkdir -p "$TEST_DIR"
-    
-    # Get paths for testing relative to the test file
-    TEST_FILE_DIR="$(dirname "${BASH_SOURCE[1]}")"
-    
-    # Define FIXTURES_DIR relative to the test file's directory
-    export FIXTURES_DIR="$TEST_FILE_DIR/fixtures"
-}
-
-# Cleanup after each test file
-teardown() {
-    # Clean up the unique test directory for this test file
-    [[ -n "$TEST_DIR" ]] && rm -rf "$TEST_DIR"
+    rm -rf "$DOTKIT_ROOT/.test_temp"
+    unset TEST_DIR
+    unset TEST_BASE_DIR
+    unset FIXTURES_DIR
+    unset DEBIAN_FRONTEND
 }
 
 # Test helper functions

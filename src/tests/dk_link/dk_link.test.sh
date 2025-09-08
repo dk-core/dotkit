@@ -1,40 +1,45 @@
 #!/usr/bin/env bash
 # test_ln.sh - Comprehensive tests for dk_link command
 
+# Setup for individual test files
+set_up() {
+    # Create a unique test directory for each test file
+    TEST_DIR="$TEST_BASE_DIR/$(date +%s%N)"
+    export TEST_DIR
+    mkdir -p "$TEST_DIR"
+    
+    # Get paths for testing relative to the test file
+    TEST_FILE_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+    # Define FIXTURES_DIR relative to the test file's directory
+    export FIXTURES_DIR="$TEST_FILE_DIR/fixtures"
+}
+
 # Source Validation Tests
 test_rejects_nonexistent_sources() {
-    setup # Call setup from test_helper.sh
-    
     dk_link "/nonexistent/file.conf" "$TEST_DIR/app1/config.conf" >/dev/null 2>&1
     local result=$?
     assert_equals 1 "$result"
-    
-    teardown # Call teardown from test_helper.sh
 }
 
 test_rejects_multiple_nonexistent_sources() {
-    setup
     
     dk_link "/nonexistent1.conf" "$TEST_DIR/app1/config1.conf" "/nonexistent2.conf" "$TEST_DIR/app1/config2.conf" >/dev/null 2>&1
     local result=$?
     assert_equals 1 "$result"
     
-    teardown
 }
 
 test_accepts_existing_sources() {
-    setup
     
     dk_link "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_DIR/app1/config.conf" >/dev/null 2>&1
     local result=$?
     assert_equals 0 "$result"
     
-    teardown
 }
 
 # Target Conflict Tests
 test_exits_on_existing_file_conflict() {
-    setup
     
     # Create existing file
     create_test_file "$TEST_DIR/app1/existing.conf" "existing content"
@@ -48,11 +53,9 @@ test_exits_on_existing_file_conflict() {
     local file_check_result=$?
     assert_equals 0 "$file_check_result"
     
-    teardown
 }
 
 test_prompts_for_existing_symlink_overwrite() {
-    setup
     mock_gum_yes
     
     # Create existing symlink within config home
@@ -70,11 +73,9 @@ test_prompts_for_existing_symlink_overwrite() {
     link_target=$(readlink "$TEST_DIR/app1/existing.conf")
     assert_equals "$TEST_DIR/source.conf" "$link_target"
     
-    teardown
 }
 
 test_exits_when_user_declines_symlink_overwrite() {
-    setup
     mock_gum_no
     
     # Create existing symlink within config home
@@ -92,12 +93,10 @@ test_exits_when_user_declines_symlink_overwrite() {
     link_target=$(readlink "$TEST_DIR/app1/existing.conf")
     assert_equals "$TEST_DIR/old_target" "$link_target"
     
-    teardown
 }
 
 # Enhanced Test 4.1: Multiple file conflicts
 test_exits_on_multiple_existing_file_conflicts() {
-    setup
     
     # Create multiple existing files
     create_test_file "$TEST_DIR/app1/existing1.conf" "existing content 1"
@@ -128,12 +127,10 @@ test_exits_on_multiple_existing_file_conflicts() {
     local file_check_result3=$?
     assert_equals 0 "$file_check_result3"
     
-    teardown
 }
 
 # Enhanced Test 4.2: Multiple symlink conflicts
 test_handles_multiple_existing_symlink_conflicts() {
-    setup
     mock_gum_yes
     
     # Create multiple existing symlinks within config home
@@ -163,11 +160,9 @@ test_handles_multiple_existing_symlink_conflicts() {
     assert_equals "$TEST_DIR/source2.conf" "$link_target2"
     assert_equals "$TEST_DIR/source3.conf" "$link_target3"
     
-    teardown
 }
 
 test_exits_when_user_declines_multiple_symlink_overwrite() {
-    setup
     mock_gum_no
     
     # Create multiple existing symlinks within config home
@@ -197,12 +192,10 @@ test_exits_when_user_declines_multiple_symlink_overwrite() {
     assert_equals "$TEST_DIR/old_target2" "$link_target2"
     assert_equals "$TEST_DIR/old_target3" "$link_target3"
     
-    teardown
 }
 
 # Mixed conflict test - file conflicts always cause exit 1
 test_exits_on_mixed_file_and_symlink_conflicts() {
-    setup
     
     # Create a mix of existing files and symlinks
     create_test_file "$TEST_DIR/app1/existing_file1.conf" "existing content 1"
@@ -239,12 +232,10 @@ test_exits_on_mixed_file_and_symlink_conflicts() {
     local file_check_result2=$?
     assert_equals 0 "$file_check_result2"
     
-    teardown
 }
 
 # Successful Operation Tests
 test_creates_single_symlink() {
-    setup
     
     dk_link "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_DIR/app1/config.conf" >/dev/null 2>&1
     local result=$?
@@ -260,11 +251,9 @@ test_creates_single_symlink() {
     link_target=$(readlink "$TEST_DIR/app1/config.conf")
     assert_equals "$FIXTURES_DIR/test_sources/config1.conf" "$link_target"
     
-    teardown
 }
 
 test_creates_multiple_symlinks() {
-    setup
     
     dk_link \
         "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_DIR/app1/config1.conf" \
@@ -281,11 +270,9 @@ test_creates_multiple_symlinks() {
     local symlink_check_result2=$?
     assert_equals 0 "$symlink_check_result2"
     
-    teardown
 }
 
 test_creates_target_directories() {
-    setup
     
     dk_link "$FIXTURES_DIR/test_sources/config1.conf" "$TEST_DIR/new_app/subdir/config.conf" >/dev/null 2>&1
     local result=$?
@@ -299,32 +286,26 @@ test_creates_target_directories() {
     local symlink_check_result=$?
     assert_equals 0 "$symlink_check_result"
     
-    teardown
 }
 
 # Edge Cases
 test_rejects_empty_arguments() {
-    setup
     
     dk_link >/dev/null 2>&1
     local result=$?
     assert_equals 1 "$result"
     
-    teardown
 }
 
 test_rejects_odd_number_of_arguments() {
-    setup
     
     dk_link "$FIXTURES_DIR/test_sources/config1.conf" >/dev/null 2>&1
     local result=$?
     assert_equals 1 "$result"
     
-    teardown
 }
 
 test_handles_broken_symlink_targets() {
-    setup
     mock_gum_yes
     
     # Create symlink to non-existent target within config home
@@ -342,13 +323,12 @@ test_handles_broken_symlink_targets() {
     link_target=$(readlink "$TEST_DIR/app1/broken.conf")
     assert_equals "$TEST_DIR/source.conf" "$link_target"
     
-    teardown
 }
 
 # TODO: assoicative arrays
 # # Associative Array Tests (bash 4+)
 # test_associative_array_function() {
-#     setup
+#   
     
 #     # Skip if bash version < 4
 #     if [[ ${BASH_VERSION%%.*} -lt 4 ]]; then
@@ -375,12 +355,11 @@ test_handles_broken_symlink_targets() {
 #     [[ -L "$TEST_DIR/app2/config2.conf" ]]
 #     assert_equals 0 $?
     
-#     teardown
+#   
 # }
 
 # Fallback Tests (when gum is not available)
 test_fallback_prompt_yes() {
-    setup
     mock_gum_missing
     
     # Create a source file within config home for this test
@@ -396,11 +375,9 @@ test_fallback_prompt_yes() {
     local symlink_check_result=$?
     assert_equals 0 "$symlink_check_result"
     
-    teardown
 }
 
 test_fallback_exits_on_file_conflict() {
-    setup
     mock_gum_missing
     
     # Create existing file
@@ -414,12 +391,10 @@ test_fallback_exits_on_file_conflict() {
     local result=$?
     assert_equals 1 "$result"
     
-    teardown
 }
 
 # Debug Mode Tests
 test_debug_mode_logging() {
-    setup
     
     export dokit_DEBUG=1
     
@@ -433,7 +408,6 @@ test_debug_mode_logging() {
     assert_equals 0 "$result"
     
     unset dokit_DEBUG
-    teardown
 }
 
 # The run_tests.sh script will handle calling bashunit
