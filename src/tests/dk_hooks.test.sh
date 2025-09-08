@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+# Global setup for all tests
+set_up_before_script() {
+    # Create a temporary directory for all tests
+    mkdir -p "$DOTKIT_ROOT/.test_temp"
+    sleep 0.1 # Wait for temp dir to be created
+    TEST_BASE_DIR="$(mktemp -d "$DOTKIT_ROOT/.test_temp/test.XXXXXX")"
+    export TEST_BASE_DIR
+
+    sleep 0.1 # Wait for temp dir to be created
+    
+    # Disable interactive prompts for testing
+    export DEBIAN_FRONTEND=noninteractive
+}
+
 # Setup function to run before each test
 set_up() {
 
@@ -14,17 +28,25 @@ set_up() {
   mkdir -p "$DK_PROFILE"
   declare -A DK_HOOKS
 
-  
   export DK_DOTFILE DK_PROFILE DK_HOOKS
 }
 
 # Teardown function to run after each test
 tear_down() {
-
   rm -rf "$DK_DOTFILE" "$DK_PROFILE"
   unset DK_DOTFILE
   unset DK_PROFILE
   unset DK_HOOKS
+}
+
+# Global teardown for all tests
+tear_down_after_script() {
+    [[ -n "$TEST_BASE_DIR" ]] && rm -rf "$TEST_BASE_DIR"
+    rm -rf "$DOTKIT_ROOT/.test_temp"
+    unset TEST_DIR
+    unset TEST_BASE_DIR
+    unset FIXTURES_DIR
+    unset DEBIAN_FRONTEND
 }
 
 test_dk_on_registers_basic_hook() {

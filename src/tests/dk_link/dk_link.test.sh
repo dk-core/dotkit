@@ -1,18 +1,53 @@
 #!/usr/bin/env bash
 # test_ln.sh - Comprehensive tests for dk_link command
 
+# Global setup for all tests
+set_up_before_script() {
+    # Create a temporary directory for all tests
+    mkdir -p "$DOTKIT_ROOT/.test_temp"
+    sleep 0.1 # Wait for temp dir to be created
+    TEST_BASE_DIR="$(mktemp -d "$DOTKIT_ROOT/.test_temp/test.XXXXXX")"
+    export TEST_BASE_DIR
+
+    sleep 0.1 # Wait for temp dir to be created
+    
+    # Disable interactive prompts for testing
+    export DEBIAN_FRONTEND=noninteractive
+}
+
 # Setup for individual test files
 set_up() {
     # Create a unique test directory for each test file
     TEST_DIR="$TEST_BASE_DIR/$(date +%s%N)"
     export TEST_DIR
     mkdir -p "$TEST_DIR"
-    
+
     # Get paths for testing relative to the test file
     TEST_FILE_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
+    log "TEST_FILE_DIR: $TEST_FILE_DIR"
+
     # Define FIXTURES_DIR relative to the test file's directory
     export FIXTURES_DIR="$TEST_FILE_DIR/fixtures"
+}
+
+tear_down() {
+    # Clean up the unique test directory for this test file
+    [[ -n "$TEST_DIR" ]] && rm -rf "$TEST_DIR"
+    unset TEST_DIR
+    unset TEST_FILE_DIR
+    unset FIXTURES_DIR
+}
+
+
+# Global teardown for all tests
+tear_down_after_script() {
+    [[ -n "$TEST_BASE_DIR" ]] && rm -rf "$TEST_BASE_DIR"
+    rm -rf "$DOTKIT_ROOT/.test_temp"
+    unset TEST_DIR
+    unset TEST_BASE_DIR
+    unset FIXTURES_DIR
+    unset DEBIAN_FRONTEND
 }
 
 # Source Validation Tests
