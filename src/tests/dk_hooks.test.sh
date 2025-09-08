@@ -91,6 +91,7 @@ test_dk_on_adds_multiple_unique_hooks_to_an_event() {
 test_dk_emit_executes_a_single_registered_hook() {
   my_func() { echo "Single hook executed"; }
   dk_on "single_event" "my_func"
+  _dk_finalize_hooks # Finalize hooks for this test
 
   local output=$(dk_emit "single_event")
   assert_equals "Single hook executed" "$output"
@@ -104,6 +105,7 @@ test_dk_emit_executes_multiple_hooks_in_correct_order() {
   dk_on "ordered_event" "func_second" 50
   dk_on "ordered_event" "func_first" 10
   dk_on "ordered_event" "func_third" 90
+  _dk_finalize_hooks # Finalize hooks for this test
 
   local output=$(dk_emit "ordered_event")
   assert_equals "First"$'\n'"Second"$'\n'"Third" "$output"
@@ -112,6 +114,7 @@ test_dk_emit_executes_multiple_hooks_in_correct_order() {
 test_dk_emit_passes_arguments_to_hooks() {
   my_arg_func() { echo "Args: $1 $2"; }
   dk_on "arg_event" "my_arg_func"
+  _dk_finalize_hooks # Finalize hooks for this test
 
   local output=$(dk_emit "arg_event" "arg1" "arg2")
   assert_equals "Args: arg1 arg2" "$output"
@@ -208,4 +211,36 @@ test_dk_load_hooks_handles_non_existent_paths_gracefully() {
   # No directories created, should not error
   dk_load_hooks
   # If no error, bashunit test passes
+}
+
+test_dk_load_hooks_with_100_modules() {
+  local i
+  local func_name
+  local hook_file
+  local expected_output=""
+  local -a expected_funcs=()
+
+  # Create 100 module directories with unique hooks
+  for i in $(seq 1 100); do
+    mkdir -p "$DK_DOTFILE/modules/mod$i/lib"
+    hook_file="$DK_DOTFILE/modules/mod$i/lib/dk_hooks.sh"
+    func_name="mod${i}_hook"
+    local order=$(( RANDOM % 1000 )) # Random order
+
+    cat > "$hook_file" <<EOF
+dk_on "stress_test_event" "$func_name" $order
+$func_name() { echo "$func_name"; }
+EOF
+    expected_funcs+=("$order:$func_name")
+  done
+
+  dk_load_hooks
+
+  # Sort expected functions to compare with actual output
+  local -a sorted_expected_funcs_names
+  mapfile -t sorted_expected_funcs_names < <(printf "%s\n" "${expected_funcs[@]}" | sort -t':' -k1,1n | cut -d':' -f2)
+  expected_output=$(IFS=$'\n'; echo "${sorted_expected_funcs_names[*]}")
+
+  local output=$(dk_emit "stress_test_event")
+  assert_equals "$expected_output" "$output"
 }

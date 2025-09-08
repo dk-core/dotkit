@@ -54,14 +54,13 @@ bashunit --debug src/tests/your_test_file.sh
 2. Name your test file following the `*.test.sh` convention (e.g., `my_test.test.sh`).
 3. Inside your test file, define functions starting with `test_` for your test cases.
 4. Use `bashunit` assertions to validate your code's behavior.
+5. note: using functions in [bashunit:test-files](https://bashunit.typeddevs.com/test-files) assist in writing tests
+6. `src/tests/test_helper.sh` provides some functions that you can use in your tests. I'll accept PRs to add more helpers.
 
 Example `src/tests/example_test.test.sh`:
 
 ```bash
 #!/usr/bin/env bash
-
-# shellcheck source=../main.sh
-source "$DOTKIT_ROOT/main.sh" api source
 
 function test_example_function_returns_success() {
   # Call the function you want to test
@@ -76,5 +75,3 @@ function test_another_example() {
   assert_true "1 -eq 1"
 }
 ```
-
-Remember that `src/tests/test_helper.sh` provides `global_setup`, `global_teardown`, `setup`, and `teardown` functions, as well as helper functions like `create_test_file` and `mock_gum_yes` that you can use in your tests.

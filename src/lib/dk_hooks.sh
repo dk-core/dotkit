@@ -4,6 +4,7 @@
 # The key will be the event name, and the value will be a space-separated string
 # of function names and their associated order (e.g., "func1:10 func2:50").
 declare -A DK_HOOKS
+declare -A _DK_SORTED_HOOKS # Stores pre-sorted function names for each event
 
 # dk_on: Registers a function to be called when an event is emitted.
 # Arguments:
@@ -51,28 +52,37 @@ dk_on() {
 #   $@: Any additional arguments to pass to the registered functions.
 dk_emit() {
   local event="$1"; shift
-  local -a funcs_to_execute=()
-  local -a sorted_funcs=()
-  local func_info
+  local func_name
 
-  # Parse the stored functions and their orders
-  for func_info in ${DK_HOOKS["$event"]:-}; do
-    # Split func_info into func_name and order
-    local current_func_name="${func_info%:*}"
-    local current_order="${func_info#*:}"
-
-    # Add to an array for sorting
-    funcs_to_execute+=("$current_order:$current_func_name")
+  # Execute pre-sorted functions
+  for func_name in ${_DK_SORTED_HOOKS["$event"]:-}; do
+    if [[ -n "$func_name" ]]; then
+      "$func_name" "$@"
+    fi
   done
+}
+# _dk_finalize_hooks: Pre-sorts and stores hooks for faster emission.
+# This function should be called once after all hook scripts have been loaded.
+_dk_finalize_hooks() {
+  local event
+  local func_info
+  local funcs_to_sort
+  local sorted_funcs_array
+  local sorted_func_names
 
-  # Sort functions by order
-  IFS=$'\n' sorted_funcs=($(sort -n <<<"${funcs_to_execute[*]}"))
-  unset IFS
+  for event in "${!DK_HOOKS[@]}"; do
+    funcs_to_sort=()
+    for func_info in ${DK_HOOKS["$event"]:-}; do
+      funcs_to_sort+=("$func_info")
+    done
 
-  # Execute sorted functions
-  for func_info in "${sorted_funcs[@]}"; do
-    local func_name="${func_info#*:}"
-    "$func_name" "$@"
+    # Sort functions by order and extract only the function names
+    # Using printf and sort -n to sort numerically by order, then cut to get func_name
+    mapfile -t sorted_funcs_array < <(printf "%s\n" "${funcs_to_sort[@]}" | sort -t':' -k2,2n | cut -d':' -f1)
+
+    # Join the sorted function names into a space-separated string
+    sorted_func_names=$(IFS=" "; echo "${sorted_funcs_array[*]}")
+    _DK_SORTED_HOOKS["$event"]="$sorted_func_names"
   done
 }
 
@@ -84,7 +94,7 @@ dk_load_hooks() {
 
   # 1. For each module in DK_DOTFILE/modules/module_name/lib/dk_hooks.sh
   # This path needs to be dynamic based on actual module directories.
-  # Assuming DK_DOTFILE is set and points to the dotkit installation directory.
+  # Assuming DK_DOTFILE is set and points to the current dotfile directory.
   # For now, this will be a placeholder as DK_DOTFILE is not defined in this context.
   # We'll need to ensure DK_DOTFILE and DK_PROFILE are properly set in the environment
   # where this function is called.
@@ -95,6 +105,8 @@ dk_load_hooks() {
   # Placeholder for DK_DOTFILE/modules/*/lib/dk_hooks.sh
   for hook_file in "$DK_DOTFILE"/modules/*/lib/dk_hooks.sh; do
     if [[ -f "$hook_file" ]]; then
+      dk_debug "Loading hook file: $hook_file"
+       # shellcheck source=/dev/null
       source "$hook_file"
     fi
   done
@@ -102,6 +114,8 @@ dk_load_hooks() {
   # 2. DK_DOTFILE/lib/dk_hooks.sh
   hook_file="$DK_DOTFILE/lib/dk_hooks.sh"
   if [[ -f "$hook_file" ]]; then
+    dk_debug "Loading hook file: $hook_file"
+     # shellcheck source=/dev/null
     source "$hook_file"
   fi
 
@@ -109,6 +123,8 @@ dk_load_hooks() {
   # Placeholder for DK_PROFILE/modules/*/lib/dk_hooks.sh
   for hook_file in "$DK_PROFILE"/modules/*/lib/dk_hooks.sh; do
     if [[ -f "$hook_file" ]]; then
+      dk_debug "Loading hook file: $hook_file"
+       # shellcheck source=/dev/null
       source "$hook_file"
     fi
   done
@@ -116,6 +132,11 @@ dk_load_hooks() {
   # 4. DK_PROFILE/lib/dk_hooks.sh
   hook_file="$DK_PROFILE/lib/dk_hooks.sh"
   if [[ -f "$hook_file" ]]; then
+    dk_debug "Loading hook file: $hook_file"
+    # shellcheck source=/dev/null
     source "$hook_file"
   fi
+
+  # Finalize hooks after all loading is complete
+  _dk_finalize_hooks
 }

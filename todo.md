@@ -8,19 +8,24 @@
 
 ## scripts - 40%
 
-- `dk_link` infers type allows associative arrays as input additionally
-- more envs, used globally but implement in dk_link
+- dk_link
+  - `dk_link` infers type allows associative arrays as input additionally
+  - add env handling
+
+- dk_hook
+  - add handling for dotkit native hooks, pre/post install/set/update
+  - add toml loading for hooks as a user friendly alternative to the dk_hooks.sh file
+
+- dk_envs.sh, used globally
   - dry-run
   - force / non-interactive
 - implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
-- event hooks, install/set/update/etc.
 
-toml:
-
-- implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
-- implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
-- toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
-- implement automatic module discovery and execution based on
+- dk_toml
+  - implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+  - implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
+  - toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
+  - implement automatic module discovery and execution based on
 
 first run:
 
