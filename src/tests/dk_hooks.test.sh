@@ -52,23 +52,26 @@ tear_down_after_script() {
 test_dk_on_registers_basic_hook() {
   my_func() { echo "Hello from my_func"; }
   dk_on "test_event" "my_func"
+  _dk_finalize_hooks
 
-  assert_equals "my_func:50" "${DK_HOOKS["test_event"]}"
+  assert_equals "my_func" "${_DK_SORTED_HOOKS["test_event"]}"
 }
 
 test_dk_on_registers_hook_with_custom_order() {
   my_func() { echo "Hello from my_func"; }
   dk_on "test_event" "my_func" 10
+  _dk_finalize_hooks
 
-  assert_equals "my_func:10" "${DK_HOOKS["test_event"]}"
+  assert_equals "my_func" "${_DK_SORTED_HOOKS["test_event"]}"
 }
 
 test_dk_on_overwrites_an_existing_hook_by_name() {
   func_a() { echo "Func A"; }
   dk_on "overwrite_event" "func_a" 10
   dk_on "overwrite_event" "func_a" 90 # Overwrite with new order
+  _dk_finalize_hooks
 
-  assert_equals "func_a:90" "${DK_HOOKS["overwrite_event"]}"
+  assert_equals "func_a" "${_DK_SORTED_HOOKS["overwrite_event"]}"
 }
 
 test_dk_on_adds_multiple_unique_hooks_to_an_event() {

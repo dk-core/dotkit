@@ -25,8 +25,6 @@ set_up() {
     # Get paths for testing relative to the test file
     TEST_FILE_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-    log "TEST_FILE_DIR: $TEST_FILE_DIR"
-
     # Define FIXTURES_DIR relative to the test file's directory
     export FIXTURES_DIR="$TEST_FILE_DIR/fixtures"
 }

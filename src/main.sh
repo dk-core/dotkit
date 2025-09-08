@@ -18,7 +18,7 @@ case "$command" in
     case "$subcommand" in
       source)
         # shellcheck source=lib/dk_global.sh
-        "$DOTKIT_ROOT/lib/dk_global.sh"
+        source "$DOTKIT_ROOT/lib/dk_global.sh"
         ;;
       *)
         echo "Unknown command for 'dotkit api': ${subcommand}" >&2

@@ -12,15 +12,17 @@
     let
       pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
 
+      bashunit = pkgs.callPackage ./bashunit.nix { };
+
       dotkit = pkgs.stdenv.mkDerivation {
         pname = "dotkit";
         version = "0.1.0";
 
         src = ./src;
 
-        buildInputs = with pkgs; [
-          bash
-          gum
+        buildInputs = [
+          pkgs.bash
+          pkgs.gum
           bashunit
         ];
 
@@ -28,7 +30,7 @@
           local dotkit_path=$( ${
             pkgs.lib.makeBinPath [
               pkgs.gum
-              pkgs.bashunit
+              bashunit
             ]
           } )
           mkdir -p $out/bin $out/lib/dotkit
@@ -56,7 +58,7 @@
         name = "run-tests";
         runtimeInputs = [
           dotkit
-          pkgs.bashunit
+          bashunit
           pkgs.gum
         ];
         text = ''
@@ -68,11 +70,12 @@
     {
       packages."x86_64-linux".dotkit = dotkit;
       packages."x86_64-linux".tests = dotkit_tests;
+      packages."x86_64-linux".default = pkgs.callPackage ./bashunit.nix { };
 
       devShells."x86_64-linux".default = pkgs.mkShell {
         packages = [
           dotkit
-          pkgs.bashunit
+          bashunit
           pkgs.gum
         ];
       };

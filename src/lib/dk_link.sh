@@ -71,14 +71,7 @@ dk_link() {
     
     # Handle symlink conflicts with user prompt
     if [[ ${#conflicting_symlinks[@]} -gt 0 ]]; then
-        local -a symlink_descriptions=()
-        for symlink in "${conflicting_symlinks[@]}"; do
-            local link_target
-            link_target="$(readlink "$symlink" 2>/dev/null || echo "broken")"
-            symlink_descriptions+=("$symlink -> $link_target")
-        done
-        
-        dk_warn_list "The following symlinks will be overwritten" "${symlink_descriptions[@]}"
+        dk_warn_list "The following symlinks will be overwritten" "${conflicting_symlinks[@]}"
         
         if command -v gum >/dev/null 2>&1; then
             if ! gum confirm "Overwrite these symlinks?"; then

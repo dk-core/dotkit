@@ -17,33 +17,12 @@ dk_on() {
   local func_name="$2"
   local order="${3:-50}" # Default order to 50 if not provided
 
-  local -A temp_hooks # Temporary associative array to manage unique functions for this event
-  local existing_func_info
-  local existing_func_name
-  local existing_order
-  local new_hook_list=""
-
-  # Populate temp_hooks with existing functions for this event
-  # This loop handles the case where DK_HOOKS["$event"] might be empty or unset
-  for existing_func_info in ${DK_HOOKS["$event"]:-}; do
-    # Check if existing_func_info contains a colon to avoid issues with malformed entries
-    if [[ "$existing_func_info" == *:* ]]; then
-      existing_func_name="${existing_func_info%:*}"
-      existing_order="${existing_func_info#*:}"
-      temp_hooks["$existing_func_name"]="$existing_order"
-    fi
-  done
-
-  # Add or update the new function
-  temp_hooks["$func_name"]="$order"
-
-  # Reconstruct the hook list string
-  for key in "${!temp_hooks[@]}"; do
-    new_hook_list+="$key:${temp_hooks[$key]} "
-  done
-
-  # Trim leading/trailing whitespace
-  DK_HOOKS["$event"]="$(echo -e "$new_hook_list" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  # Append with a space, but only if the variable is not empty
+  if [[ -n "${DK_HOOKS[$event]}" ]]; then
+    DK_HOOKS["$event"]+="$func_name:$order "
+  else
+    DK_HOOKS["$event"]="$func_name:$order "
+  fi
 }
 
 # dk_emit: Emits an event, triggering all registered functions for that event.
@@ -66,23 +45,41 @@ dk_emit() {
 _dk_finalize_hooks() {
   local event
   local func_info
-  local funcs_to_sort
   local sorted_funcs_array
   local sorted_func_names
+  local func_name
+  local order
 
   for event in "${!DK_HOOKS[@]}"; do
-    funcs_to_sort=()
-    for func_info in ${DK_HOOKS["$event"]:-}; do
-      funcs_to_sort+=("$func_info")
+    # Use an associative array to store the latest order for each function,
+    # effectively handling duplicates. The last one wins.
+    local -A unique_hooks
+    for func_info in ${DK_HOOKS["$event"]}; do
+      func_name="${func_info%:*}"
+      order="${func_info#*:}"
+      unique_hooks["$func_name"]="$order"
     done
 
-    # Sort functions by order and extract only the function names
-    # Using printf and sort -n to sort numerically by order, then cut to get func_name
-    mapfile -t sorted_funcs_array < <(printf "%s\n" "${funcs_to_sort[@]}" | sort -t':' -k2,2n | cut -d':' -f1)
+    # Prepare for sorting. We need to convert the associative array
+    # back to a format that the 'sort' command can use.
+    local -a funcs_to_sort=()
+    for func_name in "${!unique_hooks[@]}"; do
+      # We use "order:func_name" to make numeric sorting on the key simple.
+      funcs_to_sort+=("${unique_hooks[$func_name]}:$func_name")
+    done
+
+    # Sort numerically by order (first field, -k1,1n) and extract the function name (second field, -f2-).
+    mapfile -t sorted_funcs_array < <(printf "%s\n" "${funcs_to_sort[@]}" | sort -t':' -k1,1n | cut -d':' -f2-)
 
     # Join the sorted function names into a space-separated string
-    sorted_func_names=$(IFS=" "; echo "${sorted_funcs_array[*]}")
-    _DK_SORTED_HOOKS["$event"]="$sorted_func_names"
+    if [[ ${#sorted_funcs_array[@]} -gt 0 ]]; then
+      sorted_func_names=$(IFS=" "; echo "${sorted_funcs_array[*]}")
+      # Trim trailing space
+      _DK_SORTED_HOOKS["$event"]="${sorted_func_names% }"
+    else
+      # Ensure the entry is cleared if no hooks are left
+      unset "_DK_SORTED_HOOKS[$event]"
+    fi
   done
 }
 
