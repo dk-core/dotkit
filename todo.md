@@ -6,26 +6,48 @@
 > dotkit is still in early development, and is not yet ready for use.
 > expect breaking changes and bugs, the below is subject to change.
 
-## scripts - 40%
+## scripts - 20%
 
 - dk_link
   - `dk_link` infers type allows associative arrays as input additionally
+  - as above, bring into the hooks system
   - add env handling
 
-- dk_hook
-  - add handling for dotkit native hooks, pre/post install/set/update
-  - add toml loading for hooks as a user friendly alternative to the dk_hooks.sh file
-
-- dk_envs.sh, used globally
+- add envs to dk_global.sh
   - dry-run
   - force / non-interactive
 - implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
 
 - dk_toml
+  - tomlq  
   - implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+  - something like `mapfile -t modules < <(tomlq -r '.files' */dotkit.toml)` to batch process a files array for example
   - implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
   - toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
   - implement automatic module discovery and execution based on
+
+- events - integration with all functions
+  - events hold variables, eg _DK_POSTINSTALL_LINKS
+  - pre/post install/set/update
+    - pre install
+      - install packages
+    - post install
+      - validate links
+      - runs dk_link internally
+  - use dk_hook
+  - validate events
+  - add handling for dotkit native hooks, pre/post install/set/update
+  - add toml loading for hooks as a user friendly alternative to the dk_hooks.sh file
+  
+- dk_hooks
+  - validation limited overwrite on named hooks like install/set/update, warning
+  
+- dk-logging
+  - use bashunit logs by checking if the command exists for helpful logging messages during testing
+  - should be 1-1 with debug logs
+  - journalctl logging more robust?
+
+## hello world + integration - 40%
 
 first run:
 
@@ -51,44 +73,23 @@ dotkit-web:
 - start creating core api documentation
 - start making guides for dotfile development
 
-## configuration, init - 60%
+## further configuration, example dotfiles & modules - 60%
 
-- setup dkvm for dev
-  - quickemu??
+- create dotkitvm
+  - use quickemu for dkvm
+  - wraps quickemu, dotkit can load in the quickemu environment and run dotkit commands/init
+  - named vm instances by date/time & commit
+  - use snapshotting if supported
+  - used to detect dotkit regressions and dotfile/module testing
+  - something robust enough for users to use for testing their own dotfiles
 
-- no themes just dotfiles
+- waybar module
+- hyprland module
+- rofi module
+- swww module
+- full dotfile using all parts
 
-- hyprland config
-- waybar config
-- walker config
-- swaync config
-- gtk theme
-- font
-- icons
-- cursor
-- qt theme
-
-- hand feed dk configuration till its stable using new model
-  - shell
-  - hyprland
-  - waybar
-  - rofi
-  - hand feed wallbash template temporarily to catpuccino mocha
-
-- fully configure an initial dotfiles using the new model
-- build scripts for install, set, update
-
-## dotfiles - hyprland template - 70%
-
-- move dotfiles to new template
-
-## install script 50%
-
-- install script for dotfiles, using the template
-- create dkvm
-- test install on bare metal
-
-## testing, lots of testing 60%
+## testing, lots of testing 85%
 
 - desktop (intelcpu, amdgpu, nvidiagpu)
 - thinkpad (intelcpu)
@@ -96,20 +97,22 @@ dotkit-web:
 
 will test on arch, debian, fedora, ubuntu, and nixos
 
-## dk (cli) - 70%
+CI/CD for dotkit
+validation for dotkit-web publishing
 
-bare bones cli for dk, just pulls in existing scripts in path and runs them
-dotfiles / themes / users can use dotkit in their own bash scripts
-
-## documentation - 80%
+## documentation - 90%
 
 - revised readme
 - dotkit guide
 - theming guide
 - user profile guide
-- website
+- finalize website
+  - login with github
+  - publish modules and dotfiles  
+  - can pull modules
+  - can pull dotfiles
 
-## misc & polish - 90%
+## misc & polish - 95%
 
 ## final release (100%)
 
@@ -122,15 +125,15 @@ dotfiles / themes / users can use dotkit in their own bash scripts
 - more complex dotfiles
   - more info in [dk/hyde](#dkhyde)
 
-- marketplace
-  - more info in [marketplace](marketplace.md)
-
 ## notepad
 
-- logging: use `logger -t dk` for logging instead of python logging
+- logging: use `logger -t dk` for systemd
   - show errors with `logger -p user.err -t dk "ERROR: failed to apply theme"`
   - view with `journalctl --user -t dk -f`
 - ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no vm@localhost
+- bashinit.nix
+  - confirm if i need any other scripts from src
+  - add PR to nixpkgs
 
 ## dk/hyde
 

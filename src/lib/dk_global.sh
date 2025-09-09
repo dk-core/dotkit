@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 DK_LIB="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
-export DK_LIB
 
-### --- Lib ---
+### --- Globals ---
+
+# dotkit version
+DOTKIT_VERSION="$(cat "$DK_LIB/VERSION")"
+export DOTKIT_VERSION
 
 # shellcheck source=dk_logging.sh
 source "$DK_LIB/dk_logging.sh"

@@ -4,7 +4,7 @@
 DOTKIT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &>/dev/null && pwd)
 
 # shellcheck source=../main.sh
-source "$DOTKIT_ROOT/main.sh" api source
+source "$DOTKIT_ROOT/main.sh" source
 
 # Test helper functions
 create_test_file() {

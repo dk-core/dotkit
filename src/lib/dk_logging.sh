@@ -30,7 +30,7 @@ dk_error() {
 }
 
 dk_debug() { 
-    if [[ "${DK_DEBUG:-}" == "1" ]]; then
+    if [[ "${DK_DEBUG:-}" == true ]]; then
         logger -t dotkit "DEBUG: $*" 2>/dev/null || true
         echo "[dotkit] DEBUG: $*" >&2
     fi
