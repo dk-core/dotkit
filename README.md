@@ -25,14 +25,17 @@ dotkit is a tool for managing dotfiles. it helps you organize, share, and switch
 
 ## core ideas
 
-- **dotfiles:** collections of modules and scripts that are standalone, sharable and reusable by the community
-  - build on top of the dotkit api
-  - create or add modules and scripts to your dotfiles from the community marketplace
-  - share your dotfiles with others, update them, and switch between them
-- **profiles:** so you can keep different setups for different needs
-  - still built on the dotkit api
-  - allows safely extending and overriding dotfiles
-  - able to be used standalone to create your own future dotfiles
+**dotfiles:** collections of modules and scripts that are standalone, sharable and reusable by the community
+
+- build on top of the dotkit api
+- create or add modules and scripts to your dotfiles from the community marketplace
+- share your dotfiles with others, update them, and switch between them
+
+**profiles:** so you can keep different setups for different needs
+
+- still built on the dotkit api
+- allows safely extending and overriding dotfiles
+- able to be used standalone to create your own future dotfiles
 
 the dotkit api:
 
@@ -44,6 +47,7 @@ dotkit cli:
 
 - simple commands for installing, setting, and updating dotfiles
 - dotfile and profile management
+- status - always know what is installed
 
 ## modules
 
