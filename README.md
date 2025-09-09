@@ -11,128 +11,112 @@
 ![progress-bar](https://progress-bar.xyz/1/?width=1000)
 > see [#todo](./todo.md) for more info on progress
 
+## motivation
+
+managing dotfiles across different setups is hard. copying configs by hand is messy, and sharing them with others is even harder. theres no real standards, every dotfile creates solutions for their own needs.
+
+dotkit tries to fit a need: you can install, switch, and update your configs with just a few commands. you can also try out someone else’s setup for a day, all while keeping your custom profiles intact. the event & module system allows extensibility, and the marketplace makes it easy to share and install configs and modules.
+
+the goal is simple: make desktop environments easy to use, share, and extend.
+
 ## overview
 
-`dotkit` is a dotfiles manager designed for both dotfile maintainers and users.
+dotkit is a tool for managing dotfiles. it helps you organize, share, and switch between different setups. it works for both people who make & share dotfiles and people who just want to use them.
 
-- **for maintainers:** extensible module system, developer-friendly api, profile isolation
-- **for users:** intelligent conflict resolution and easy import/export of configurations.
+## core ideas
 
-the project is built on four core principles:
+- **dotfiles:** collections of modules and scripts that are standalone, sharable and reusable by the community
+  - build on top of the dotkit api
+  - create or add modules and scripts to your dotfiles from the community marketplace
+  - share your dotfiles with others, update them, and switch between them
+- **profiles:** so you can keep different setups for different needs
+  - still built on the dotkit api
+  - allows safely extending and overriding dotfiles
+  - able to be used standalone to create your own future dotfiles
 
-1. **dotkit api:** a simple, consistent api for module/dotfile developers featuring:
-2. **module system:** an extensible, language-agnostic component system using the above.
-3. **dotfiles layer:** standardized, community-driven dotfile configurations leveraging both the above.
-   - dotkit provides some [core modules](#core-modules) for optional, but common functionality
-4. **user profiles:** composable user-specific customizations, the users home for all things dotfiles.
+the dotkit api:
 
-in the end, dotkit is what users interact with to install, manage, and configure their dotfiles.
+- **modules:** composable systems for adding new features to either dotfiles or profiles
+- **events** for running custom actions at certain times (like before or after installing)
+- **links:** that safely links your config files where they need to go
 
-## why?
+dotkit cli:
 
-dotfiles offer a personalized experience, but they can be difficult to share and adapt. dotkit simplifies dotfile management, making it more efficient and enjoyable.
+- simple commands for installing, setting, and updating dotfiles
+- dotfile and profile management
 
-ever wanted to try a program config for a day, or a full dotfile setup for a weekend? dotkit makes that possible.
+## modules
 
-the end goal is to enable true multi-platform, multi-session, and multi-user dotfile management. reinstalling an entire OS just to try a new dotfile setup isn't sustainable. however, this is a community-driven effort, and we need your help to build using dotkit to make this a reality.
+dotkit will start off with some core modules:
 
-dotkits modules extend beyond program configuration, offering a wide range of functionality from package management to system detection.
-
-dotkit is developing the following core modules:
-
+- logging
 - [package management](docs/modules/packages.md)
 - [gpu management](docs/modules/gpu.md)
 - [system detection](docs/modules/system.md)
-- more to come!
+- migrations
+- theme management
 
-but these are just the beginning. build your own modules and share them with the community!
-some ideas:
+the usecases for modules are endless.
 
-- session management
-- file locking with `chattr`
-- automated backups
-- theme management & switching
-
-anything you can do with on linux, you can do with dotkit.
-
-## api summary
-
-`dotkit` provides a rich set of bash helper functions for module & dotfile developers:
-
-- **event management:**:
-  - dotfiles/modules/users can call scripts on install, set, update, etc.
-  - dotfile -> module -> user - user overrides default behavior
-- **file & symlink helpers:**
-  - `dk_link`: creates symlinks with advanced conflict resolution. can take an associative array for batch linking.
-  - `dk_unlink` - deletes symlinks
-- **logging helpers:** `dk_log`, `dk_warn`, `dk_error`, `dk_success` for structured, color-coded output.
-- **user interaction:** `dk_ask`, `dk_choose`, `dk_input` for advanced user prompts
-- **environment management:**  scripts have access to the full environment, including variables from the parent shell and all active modules
-  - core paths `DK_CONFIG`, `DK_DOTFILE`, etc.
-  - behavior flags `DK_INTERACTIVE`
-  - all functions from dotkit, dotfile, and module scripts
-
-## dotkit.toml
-
-dotfiles, profiles, and modules will all be able to define their own configurations in a `dotkit.toml` file.
-
-- metadata
-- files - symlink definitions
-- events - scripts to call on install, set, update, etc.
-
-## module system design
-
-the module system is the core of `dotkit`'s extensibility.
-dotfiles will be able to install modules from the community to handle common tasks that end up being repeated across dotfiles.
-
-- **core principles:** modules are language-agnostic (any script with a shebang / bash callable), extensible, annd self-contained
-
-## cli interface
-
-dotkit operates as a command-line tool with the module functions available through the module system:
+## cli usage
 
 ```bash
-# dotfile management
-dotkit install github:user/my-dotfile  # install dotfile repository & immediately set as current
-dotkit dotfile set my-dotfile          # set current dotfile to my-dotfile
-dotkit unset dotfile                   # unsets current dotfile & profile
+dotkit install github:user/my-dotfile
 
-# profile management  
-dotkit profile set dev               # switch to dev profile
-dotkit profile unset                 # unsets current profile (using dotfile defaults)
+dotkit profile set my-dotfile-dev
+dotkit profile set my-dotfile-gaming
 ```
 
-## example user experience
+## configuration
+
+dotfiles, profiles, and modules use `dotkit.toml` for metadata, files, and events.
+lets say we have a module called `waybar-module` on the dotkit marketplace.
+
+```toml
+name="waybar-module"
+version="0.1.0"
+description="waybar module"
+type="module"
+
+# automatically linked by dotkit event install and set
+[files]
+"waybar/config" = "~/.config/waybar/config"
+"waybar/style.css" = "~/.config/waybar/style.css"
+
+# automatically called by dotkit event pre_install
+# shell commands, scripts, and functions are supported
+# priority is by order of entry
+[events.pre_install]
+wb_install = "sudo pacman -S waybar"
+wb_config = "scripts/extra-setup.sh"
+wb_function = "custom_pre_install_function"
+
+# automatically called by dotkit event post_set
+[events.post_set]
+wb_notify = "notify-send 'waybar config applied!'"
+wb_script = "scripts/notify-extra.sh"
+wb_set_function = "custom_post_set_function" # not to conflict with wb_function
+```
+
+to use this module, add it to your dotfile or profile:
 
 ```bash
-# user installs hyde dotfiles
-dotkit install github:hyde-project/hyde
-# ...installs packages, some interactive prompts...
-
-# hyde cli is automatically available
-hyde theme list
-hyde theme set catppuccin-mocha
-hyde update
-hyde status
-
-# dotkit commands still work
-dotkit profile set gaming
-dotkit dotfile set my-dotfile # changes from hyde to my-dotfile
-
-# hybrid commands work with hyde branding
-hyde set  # uses hyde's custom set command
-dotkit set  # uses dotkit's default set command
+dotkit module add github:user/waybar-module
+# will prompt to add to your dotfiles or profiles
 ```
 
 ## marketplace
 
-dotkit provides a centralized module registry and marketplace for dotfile maintainers to create cohesive, user-friendly configurations.
+the [marketplace](https://dotkit.app) is a central place to share and discover dotfiles and modules. you can publish your own configs or modules for others to use, and find ready-made setups for popular tools. this makes it easy to:
 
-maintainers will be able to upload dotfiles and modules to the registry, and users will be able to install and update them with ease.
+- reuse configs and modules from the community
+- keep your dotfiles up to date across machines
+- contribute improvements or fixes to shared modules
+- avoid duplicating work—build on what others have made
 
-## documentation - wip
+## docs
 
-- [docs](./docs/docs.md)
+- [getting started](./docs/docs.md)
 - [dotfiles](./docs/dotfiles.md)
 - [profiles](./docs/profiles.md)
 - [modules](./docs/modules.md)
