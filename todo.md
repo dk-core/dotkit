@@ -8,9 +8,15 @@
 
 ## scripts - 20%
 
+next commits:
+dk_hooks.sh - feat: added executable file support for hooks
+
+- rename dk_hooks to dk_events
+- events folder
+
 - dk_link
   - `dk_link` infers type allows associative arrays as input additionally
-  - as above, bring into the hooks system
+  - bring into the hooks system as noted in dk_events
   - add env handling
 
 - add envs to dk_global.sh
@@ -26,7 +32,7 @@
   - toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
   - implement automatic module discovery and execution based on
 
-- events - integration with all functions
+- dk_events - integration with all functions
   - events hold variables, eg _DK_POSTINSTALL_LINKS
   - pre/post install/set/update
     - pre install
@@ -34,7 +40,6 @@
     - post install
       - validate links
       - runs dk_link internally
-  - use dk_hook
   - validate events
   - add handling for dotkit native hooks, pre/post install/set/update
   - add toml loading for hooks as a user friendly alternative to the dk_hooks.sh file

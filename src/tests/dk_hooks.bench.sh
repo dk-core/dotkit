@@ -22,14 +22,14 @@ set_up() {
 }
 
 # Benchmark: dk_on - single hook registration
-# @revs=1000 @its=5
+# @revs=1 @its=100
 function bench_dk_on_single() {
     set_up
     dk_on "test_event" "my_func"
 }
 
 # Benchmark: dk_on - 100 hook registrations to the same event
-# @revs=10 @its=5
+# @revs=1 @its=100
 function bench_dk_on_100() {
     set_up
     local i
@@ -49,7 +49,7 @@ _setup_many_hooks() {
 }
 
 # Benchmark: _dk_finalize_hooks with 100 hooks
-# @revs=10 @its=5
+# @revs=1 @its=100
 function bench_dk_finalize_hooks_100() {
     set_up
     _setup_many_hooks "finalize_event_100" 100
@@ -57,7 +57,7 @@ function bench_dk_finalize_hooks_100() {
 }
 
 # Benchmark: _dk_finalize_hooks with 1000 hooks
-# @revs=2 @its=3
+# @revs=1 @its=100
 function bench_dk_finalize_hooks_1000() {
     set_up
     _setup_many_hooks "finalize_event_1000" 1000
@@ -65,7 +65,7 @@ function bench_dk_finalize_hooks_1000() {
 }
 
 # Benchmark: dk_emit with 100 hooks
-# @revs=10 @its=5
+# @revs=1 @its=100
 function bench_dk_emit_100() {
     set_up
     local i
@@ -77,8 +77,24 @@ function bench_dk_emit_100() {
     dk_emit "$event_name"
 }
 
+# Benchmark: dk_emit with 100 executable hooks
+# @revs=1 @its=100
+function bench_dk_emit_100_exec() {
+    set_up
+    local i
+    local event_name="emit_event_100_exec"
+    for i in $(seq 1 100); do
+        local exec_hook="$TEST_DIR/bench_exec_hook_$i.sh"
+        echo -e '#!/usr/bin/env bash\n:' > "$exec_hook"
+        chmod +x "$exec_hook"
+        dk_on "$event_name" "$exec_hook" "$((RANDOM % 1000))"
+    done
+    _dk_finalize_hooks
+    dk_emit "$event_name"
+}
+
 # Benchmark: dk_emit with 1000 hooks
-# @revs=2 @its=3
+# @revs=1 @its=100
 function bench_dk_emit_1000() {
     set_up
     local i

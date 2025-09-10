@@ -100,6 +100,41 @@ test_dk_emit_executes_a_single_registered_hook() {
   assert_equals "Single hook executed" "$output"
 }
 
+test_dk_emit_executes_executable_hook() {
+  local exec_hook="$TEST_DIR/executable_hook.sh"
+  echo -e '#!/usr/bin/env bash\necho "Executable hook executed"' > "$exec_hook"
+  chmod +x "$exec_hook"
+  dk_on "exec_event" "$exec_hook"
+  _dk_finalize_hooks
+
+  local output=$(dk_emit "exec_event")
+  assert_equals "Executable hook executed" "$output"
+}
+
+test_dk_emit_executes_function_and_executable_hooks_in_order() {
+  my_func() { echo "Function hook executed"; }
+  local exec_hook="$TEST_DIR/executable_hook2.sh"
+  echo -e '#!/usr/bin/env bash\necho "Executable2 hook executed"' > "$exec_hook"
+  chmod +x "$exec_hook"
+  dk_on "mixed_event" "my_func" 10
+  dk_on "mixed_event" "$exec_hook" 20
+  _dk_finalize_hooks
+
+  local output=$(dk_emit "mixed_event")
+  assert_equals "Function hook executed"$'\n'"Executable2 hook executed" "$output"
+}
+
+test_dk_emit_passes_arguments_to_executable_hook() {
+  local exec_hook="$TEST_DIR/arg_exec_hook.sh"
+  echo -e '#!/usr/bin/env bash\necho "Args: $1 $2"' > "$exec_hook"
+  chmod +x "$exec_hook"
+  dk_on "arg_exec_event" "$exec_hook"
+  _dk_finalize_hooks
+
+  local output=$(dk_emit "arg_exec_event" "foo" "bar")
+  assert_equals "Args: foo bar" "$output"
+}
+
 test_dk_emit_executes_multiple_hooks_in_correct_order() {
   func_first() { echo "First"; }
   func_second() { echo "Second"; }

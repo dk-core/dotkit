@@ -31,12 +31,18 @@ dk_on() {
 #   $@: Any additional arguments to pass to the registered functions.
 dk_emit() {
   local event="$1"; shift
-  local func_name
+  local handler
 
-  # Execute pre-sorted functions
-  for func_name in ${_DK_SORTED_HOOKS["$event"]:-}; do
-    if [[ -n "$func_name" ]]; then
-      "$func_name" "$@"
+  # Execute pre-sorted handlers (functions or executables)
+  for handler in ${_DK_SORTED_HOOKS["$event"]:-}; do
+    if [[ -n "$handler" ]]; then
+      if declare -F "$handler" >/dev/null; then
+        "$handler" "$@"
+      elif [[ -x "$handler" ]]; then
+        "$handler" "$@"
+      else
+        echo "Warning: Handler $handler is not a function or executable" >&2
+      fi
     fi
   done
 }
