@@ -68,9 +68,9 @@
       };
     in
     {
-      packages."x86_64-linux".dotkit = dotkit;
+      packages."x86_64-linux".default = dotkit;
       packages."x86_64-linux".tests = dotkit_tests;
-      packages."x86_64-linux".default = pkgs.callPackage ./bashunit.nix { };
+      packages."x86_64-linux".bashunit = pkgs.callPackage ./bashunit.nix { };
 
       devShells."x86_64-linux".default = pkgs.mkShell {
         packages = [

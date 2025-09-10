@@ -81,7 +81,7 @@ function bench_dk_link_single() {
 }
 
 # Benchmark: dk_link - multiple link creation (10 links)
-# @revs=50 @its=5
+# @revs=1 @its=100
 function bench_dk_link_multiple_10() {
     set_up
 
