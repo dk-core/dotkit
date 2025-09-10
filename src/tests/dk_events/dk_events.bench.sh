@@ -2,9 +2,9 @@
 
 # Global setup for all benchmarks in this file
 set_up_before_script() {
-    # Ensure DK_HOOKS is declared as an associative array
-    declare -gA DK_HOOKS
-    declare -gA _DK_SORTED_HOOKS
+    # Ensure DK_EVENTS is declared as an associative array
+    declare -gA DK_EVENTS
+    declare -gA _DK_SORTED_EVENTS
 
     # Define dummy functions for emission once
     local i
@@ -16,9 +16,9 @@ set_up_before_script() {
 
 # Setup function to run before each benchmark
 set_up() {
-    # Reset DK_HOOKS and _DK_SORTED_HOOKS before each test
-    DK_HOOKS=()
-    _DK_SORTED_HOOKS=()
+    # Reset DK_EVENTS and _DK_SORTED_EVENTS before each test
+    DK_EVENTS=()
+    _DK_SORTED_EVENTS=()
 }
 
 # Benchmark: dk_on - single hook registration
@@ -38,33 +38,33 @@ function bench_dk_on_100() {
     done
 }
 
-# Helper function for benchmarks involving many hooks
-_setup_many_hooks() {
+# Helper function for benchmarks involving many events
+_setup_many_events() {
     local event_name="$1"
-    local num_hooks="$2"
+    local num_events="$2"
     local i
-    for i in $(seq 1 "$num_hooks"); do
+    for i in $(seq 1 "$num_events"); do
         dk_on "$event_name" "func_$i" "$((RANDOM % 1000))"
     done
 }
 
-# Benchmark: _dk_finalize_hooks with 100 hooks
+# Benchmark: _dk_finalize_events with 100 events
 # @revs=1 @its=100
-function bench_dk_finalize_hooks_100() {
+function bench_dk_finalize_events_100() {
     set_up
-    _setup_many_hooks "finalize_event_100" 100
-    _dk_finalize_hooks
+    _setup_many_events "finalize_event_100" 100
+    _dk_finalize_events
 }
 
-# Benchmark: _dk_finalize_hooks with 1000 hooks
+# Benchmark: _dk_finalize_events with 1000 events
 # @revs=1 @its=100
-function bench_dk_finalize_hooks_1000() {
+function bench_dk_finalize_events_1000() {
     set_up
-    _setup_many_hooks "finalize_event_1000" 1000
-    _dk_finalize_hooks
+    _setup_many_events "finalize_event_1000" 1000
+    _dk_finalize_events
 }
 
-# Benchmark: dk_emit with 100 hooks
+# Benchmark: dk_emit with 100 events
 # @revs=1 @its=100
 function bench_dk_emit_100() {
     set_up
@@ -73,11 +73,11 @@ function bench_dk_emit_100() {
     for i in $(seq 1 100); do
         dk_on "$event_name" "func_$i" "$((RANDOM % 1000))"
     done
-    _dk_finalize_hooks
+    _dk_finalize_events
     dk_emit "$event_name"
 }
 
-# Benchmark: dk_emit with 100 executable hooks
+# Benchmark: dk_emit with 100 executable events
 # @revs=1 @its=100
 function bench_dk_emit_100_exec() {
     set_up
@@ -89,11 +89,11 @@ function bench_dk_emit_100_exec() {
         chmod +x "$exec_hook"
         dk_on "$event_name" "$exec_hook" "$((RANDOM % 1000))"
     done
-    _dk_finalize_hooks
+    _dk_finalize_events
     dk_emit "$event_name"
 }
 
-# Benchmark: dk_emit with 1000 hooks
+# Benchmark: dk_emit with 1000 events
 # @revs=1 @its=100
 function bench_dk_emit_1000() {
     set_up
@@ -102,6 +102,6 @@ function bench_dk_emit_1000() {
     for i in $(seq 1 1000); do
         dk_on "$event_name" "func_$i" "$((RANDOM % 1000))"
     done
-    _dk_finalize_hooks
+    _dk_finalize_events
     dk_emit "$event_name"
 }

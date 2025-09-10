@@ -19,7 +19,7 @@ dk_install_error() {
   hook_conflicts=$(gum join --vertical \
     "$(gum style --foreground "#F0F0F0" "warning: hook conflicts - use --suppress to ignore")" \
     "$(gum style --foreground "#E0AF68" "  • pre_install")" \
-    "$(gum style --foreground "#E0AF68" "      - warning: dotfile:setup_env overwritten by profile:/hooks/dk_hooks.sh")" \
+    "$(gum style --foreground "#E0AF68" "      - warning: dotfile:setup_env overwritten by profile:/events/dk_events.sh")" \
   )
   # Filesystem conflicts
  symlink_warnings=$(gum join --vertical \
@@ -35,7 +35,7 @@ dk_install_error() {
   # Summary (white)
   summary=$(gum join --vertical \
     "$(gum style --foreground "#F0F0F0" "summary:")" \
-    "$(gum style --foreground "#F0F0F0" "  hooks: 10 hook_warnings: 1 || symlinks: 53 symlink_warnings: 2  raw_errors: 2")" \
+    "$(gum style --foreground "#F0F0F0" "  events: 10 hook_warnings: 1 || symlinks: 53 symlink_warnings: 2  raw_errors: 2")" \
   )
   gum join --vertical "$hook_conflicts" "$symlink_warnings" "$raw_errors" "$summary"
 }

@@ -9,14 +9,15 @@
 ## scripts - 20%
 
 next commits:
-dk_hooks.sh - feat: added executable file support for hooks
 
-- rename dk_hooks to dk_events
+- rename dk_events to dk_events
 - events folder
+
+- rename dotfiles to bundles. bundles and modules seem alright
 
 - dk_link
   - `dk_link` infers type allows associative arrays as input additionally
-  - bring into the hooks system as noted in dk_events
+  - bring into the events system as noted in dk_events
   - add env handling
 
 - add envs to dk_global.sh
@@ -41,11 +42,11 @@ dk_hooks.sh - feat: added executable file support for hooks
       - validate links
       - runs dk_link internally
   - validate events
-  - add handling for dotkit native hooks, pre/post install/set/update
-  - add toml loading for hooks as a user friendly alternative to the dk_hooks.sh file
+  - add handling for dotkit native events, pre/post install/set/update
+  - add toml loading for events as a user friendly alternative to the dk_events.sh file
   
-- dk_hooks
-  - validation limited overwrite on named hooks like install/set/update, warning
+- dk_events
+  - validation limited overwrite on named events like install/set/update, warning
   
 - dk-logging
   - use bashunit logs by checking if the command exists for helpful logging messages during testing
