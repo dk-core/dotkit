@@ -208,146 +208,81 @@ function bench_dk_toml_load_all_100() {
     tear_down
 }
 
-# Benchmark: dk_toml_batch_validate - 10 files validation
+# Benchmark: dk_toml_read_file - single file reading
+# @revs=1 @its=50
+function bench_dk_toml_read_file_single() {
+    set_up
+    
+    local test_file="$TEST_DIR/test.toml"
+    cp "$FIXTURES_DIR/benchmark.toml" "$test_file"
+    
+    dk_toml_read_file "$test_file"
+    
+    tear_down
+}
+
+# Benchmark: dk_toml_get_metadata - 10 files
 # @revs=1 @its=25
-function bench_dk_toml_batch_validate_10() {
+function bench_dk_toml_get_metadata_10() {
     set_up
     
     local i
-    local -a toml_files=()
     for i in $(seq 1 10); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_$i.toml" "$test_file"
-        toml_files+=("$test_file")
+        mkdir -p "$DK_DOTFILE/modules/mod$i"
+        cp "$FIXTURES_DIR/benchmark_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
     done
     
-    dk_toml_batch_validate "${toml_files[@]}"
+    # Load all data first
+    dk_toml_load_all >/dev/null 2>&1
+    
+    # Benchmark metadata access
+    for i in $(seq 1 10); do
+        dk_toml_get_metadata "$DK_DOTFILE/modules/mod$i/dotkit.toml" >/dev/null
+    done
     
     tear_down
 }
 
-# Benchmark: dk_toml_batch_validate - 100 files validation
-# @revs=1 @its=10
-function bench_dk_toml_batch_validate_100() {
-    set_up
-    
-    local i
-    local -a toml_files=()
-    for i in $(seq 1 100); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_100_$i.toml" "$test_file"
-        toml_files+=("$test_file")
-    done
-    
-    dk_toml_batch_validate "${toml_files[@]}"
-    
-    tear_down
-}
-
-# Benchmark: dk_toml_batch_get_metadata - 10 files
+# Benchmark: dk_toml_get_files - 10 files
 # @revs=1 @its=25
-function bench_dk_toml_batch_get_metadata_10() {
+function bench_dk_toml_get_files_10() {
     set_up
     
     local i
-    local -a toml_files=()
     for i in $(seq 1 10); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_$i.toml" "$test_file"
-        toml_files+=("$test_file")
+        mkdir -p "$DK_DOTFILE/modules/mod$i"
+        cp "$FIXTURES_DIR/benchmark_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
     done
     
-    dk_toml_batch_get_metadata "${toml_files[@]}"
+    # Load all data first
+    dk_toml_load_all >/dev/null 2>&1
+    
+    # Benchmark file access
+    for i in $(seq 1 10); do
+        dk_toml_get_files "$DK_DOTFILE/modules/mod$i/dotkit.toml" >/dev/null
+    done
     
     tear_down
 }
 
-# Benchmark: dk_toml_batch_get_metadata - 100 files
-# @revs=1 @its=10
-function bench_dk_toml_batch_get_metadata_100() {
-    set_up
-    
-    local i
-    local -a toml_files=()
-    for i in $(seq 1 100); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_100_$i.toml" "$test_file"
-        toml_files+=("$test_file")
-    done
-    
-    dk_toml_batch_get_metadata "${toml_files[@]}"
-    
-    tear_down
-}
-
-# Benchmark: dk_toml_batch_get_files - 10 files
+# Benchmark: dk_toml_get_events - 10 files
 # @revs=1 @its=25
-function bench_dk_toml_batch_get_files_10() {
+function bench_dk_toml_get_events_10() {
     set_up
     
     local i
-    local -a toml_files=()
     for i in $(seq 1 10); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_$i.toml" "$test_file"
-        toml_files+=("$test_file")
+        mkdir -p "$DK_DOTFILE/modules/mod$i"
+        cp "$FIXTURES_DIR/benchmark_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
     done
     
-    dk_toml_batch_get_files "${toml_files[@]}"
+    # Load all data first
+    dk_toml_load_all >/dev/null 2>&1
     
-    tear_down
-}
-
-# Benchmark: dk_toml_batch_get_files - 100 files
-# @revs=1 @its=10
-function bench_dk_toml_batch_get_files_100() {
-    set_up
-    
-    local i
-    local -a toml_files=()
-    for i in $(seq 1 100); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_100_$i.toml" "$test_file"
-        toml_files+=("$test_file")
-    done
-    
-    dk_toml_batch_get_files "${toml_files[@]}"
-    
-    tear_down
-}
-
-# Benchmark: dk_toml_batch_get_events - 10 files
-# @revs=1 @its=25
-function bench_dk_toml_batch_get_events_10() {
-    set_up
-    
-    local i
-    local -a toml_files=()
+    # Benchmark events access
     for i in $(seq 1 10); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_$i.toml" "$test_file"
-        toml_files+=("$test_file")
+        dk_toml_get_events "$DK_DOTFILE/modules/mod$i/dotkit.toml" >/dev/null
     done
-    
-    dk_toml_batch_get_events "${toml_files[@]}"
-    
-    tear_down
-}
-
-# Benchmark: dk_toml_batch_get_events - 100 files
-# @revs=1 @its=10
-function bench_dk_toml_batch_get_events_100() {
-    set_up
-    
-    local i
-    local -a toml_files=()
-    for i in $(seq 1 100); do
-        local test_file="$TEST_DIR/test_$i.toml"
-        cp "$FIXTURES_DIR/benchmark_100_$i.toml" "$test_file"
-        toml_files+=("$test_file")
-    done
-    
-    dk_toml_batch_get_events "${toml_files[@]}"
     
     tear_down
 }

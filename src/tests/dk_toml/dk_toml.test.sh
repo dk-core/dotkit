@@ -10,6 +10,27 @@ set_up_before_script() {
 
     sleep 0.1 # Wait for temp dir to be created
     
+    # Create test fixtures directory
+    TEST_FIXTURES_DIR="$TEST_BASE_DIR/test_fixtures"
+    mkdir -p "$TEST_FIXTURES_DIR"
+    export TEST_FIXTURES_DIR
+    
+    # Pre-create 100 test TOML files for stress testing
+    for i in $(seq 1 100); do
+        cat > "$TEST_FIXTURES_DIR/stress_test_$i.toml" <<EOF
+name="mod$i"
+version="1.0.0"
+description="Module $i for stress testing"
+type="module"
+
+[files]
+"config$i.conf" = "~/.config/app$i/config.conf"
+
+[events.pre_install]
+install$i = "echo 'Installing module $i'"
+EOF
+    done
+    
     # Disable interactive prompts for testing
     export DEBIAN_FRONTEND=noninteractive
 }
@@ -50,6 +71,7 @@ tear_down_after_script() {
     [[ -n "$TEST_BASE_DIR" ]] && rm -rf "$TEST_BASE_DIR"
     rm -rf "$DOTKIT_ROOT/.test_temp"
     unset TEST_BASE_DIR
+    unset TEST_FIXTURES_DIR
     unset DEBIAN_FRONTEND
 }
 
@@ -221,7 +243,7 @@ test_dk_toml_batch_get_metadata_extracts_all_fields() {
     dk_toml_load_all >/dev/null 2>&1
     
     local metadata
-    metadata=$(dk_toml_get_metadata_for_file "$DK_DOTFILE/dotkit.toml")
+    metadata=$(dk_toml_get_metadata "$DK_DOTFILE/dotkit.toml")
     
     echo "$metadata" | grep -q "name=waybar-module"
     assert_equals 0 "$?"
@@ -256,7 +278,7 @@ test_dk_toml_batch_get_files_extracts_file_mappings() {
     dk_toml_load_all >/dev/null 2>&1
     
     local files
-    files=$(dk_toml_get_files_for_file "$DK_DOTFILE/dotkit.toml")
+    files=$(dk_toml_get_files "$DK_DOTFILE/dotkit.toml")
     
     echo "$files" | grep -q "waybar/config"
     assert_equals 0 "$?"
@@ -289,7 +311,7 @@ test_dk_toml_batch_get_events_extracts_events() {
     dk_toml_load_all >/dev/null 2>&1
     
     local events
-    events=$(dk_toml_get_events_for_file "$DK_DOTFILE/dotkit.toml")
+    events=$(dk_toml_get_events "$DK_DOTFILE/dotkit.toml")
     
     echo "$events" | grep -q "pre_install"
     assert_equals 0 "$?"
@@ -369,26 +391,14 @@ test_dk_toml_list_discovered_files_returns_file_list() {
     assert_equals 0 "$?"
 }
 
-# Stress Test - 100 modules (following existing pattern)
+# Stress Test - 100 modules (using pre-created fixtures for accurate timing)
 test_dk_toml_load_all_with_100_modules() {
     local i
     
-    # Create 100 module directories with TOML files
+    # Copy pre-created fixtures instead of generating on-the-fly
     for i in $(seq 1 100); do
         mkdir -p "$DK_DOTFILE/modules/mod$i"
-        # Create unique TOML content for each module
-        cat > "$DK_DOTFILE/modules/mod$i/dotkit.toml" <<EOF
-name="mod$i"
-version="1.0.0"
-description="Module $i for stress testing"
-type="module"
-
-[files]
-"config$i.conf" = "~/.config/app$i/config.conf"
-
-[events.pre_install]
-install$i = "echo 'Installing module $i'"
-EOF
+        cp "$TEST_FIXTURES_DIR/stress_test_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
     done
     
     dk_toml_load_all >/dev/null 2>&1
