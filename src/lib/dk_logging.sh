@@ -33,6 +33,10 @@ dk_debug() {
     if [[ "${DK_DEBUG:-}" == true ]]; then
         logger -t dotkit "DEBUG: $*" 2>/dev/null || true
         echo "[dotkit] DEBUG: $*" >&2
+        # Use bashunit's log function if available (during testing)
+        if command -v log >/dev/null 2>&1; then
+            log "DEBUG: $*"
+        fi
     fi
 }
 

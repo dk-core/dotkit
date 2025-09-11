@@ -23,6 +23,8 @@
         buildInputs = [
           pkgs.bash
           pkgs.gum
+          pkgs.yq-go
+          pkgs.parallel-full
           bashunit
         ];
 
@@ -60,6 +62,8 @@
           dotkit
           bashunit
           pkgs.gum
+          pkgs.yq-go
+          pkgs.parallel-full
         ];
         text = ''
           cd ${./.}
@@ -77,6 +81,8 @@
           dotkit
           bashunit
           pkgs.gum
+          pkgs.yq-go
+          pkgs.parallel-full
         ];
       };
 

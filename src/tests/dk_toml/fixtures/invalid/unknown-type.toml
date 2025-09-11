@@ -1,0 +1,7 @@
+name="unknown-type-test"
+version="1.0.0"
+description="This TOML has an unknown type field"
+type="unknown_type"
+
+[files]
+"config.conf" = "~/.config/app/config.conf"

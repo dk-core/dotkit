@@ -45,7 +45,6 @@ case "$command" in
     echo "dotkit version $DOTKIT_VERSION"
     ;;
   install)
-
     dk_load_events
     dk_emit pre_install
     dk_emit install

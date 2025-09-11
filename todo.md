@@ -10,8 +10,6 @@
 
 done:
 
-- feat(event): dk emit self calls dk_load_events for convenience
-
 next:
 
 - make a lib/commands for all commands of dotkit, all possible outputs of the command and flags should be handled in said file(s)
@@ -27,7 +25,7 @@ next:
 - add envs to dk_global.sh (dry, force)
 - dk_link handles dry and force envs
 
-- toml: implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+- toml: implement core toml parsing functions
 - toml: validation `dk_toml_validate`
 
 - events: toml loading for events as a user friendly alternative to the dk_events.sh file

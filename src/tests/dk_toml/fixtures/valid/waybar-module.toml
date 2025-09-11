@@ -1,0 +1,23 @@
+name="waybar-module"
+version="0.1.0"
+description="waybar module"
+type="module"
+
+# automatically linked by dotkit event install and set
+[files]
+"waybar/config" = "~/.config/waybar/config"
+"waybar/style.css" = "~/.config/waybar/style.css"
+
+# automatically called by dotkit event pre_install
+# shell commands, scripts, and functions are supported
+# priority is by order of entry
+[events.pre_install]
+wb_install = "sudo pacman -S waybar"
+wb_config = "scripts/extra-setup.sh"
+wb_function = "custom_pre_install_function"
+
+# automatically called by dotkit event post_set
+[events.post_set]
+wb_notify = "notify-send 'waybar config applied!'"
+wb_script = "scripts/notify-extra.sh"
+wb_set_function = "custom_post_set_function"

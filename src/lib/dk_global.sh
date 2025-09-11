@@ -22,6 +22,9 @@ source "$DK_LIB/dk_events.sh"
 # shellcheck source=/dk_link.sh
 source "$DK_LIB/dk_link.sh"
 
+# shellcheck source=dk_toml.sh
+source "$DK_LIB/dk_toml.sh"
+
 ### --- Events ---
 
 # Manually source event scripts

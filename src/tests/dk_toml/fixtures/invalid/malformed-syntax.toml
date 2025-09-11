@@ -1,0 +1,10 @@
+name="malformed-toml"
+version="1.0.0"
+description="This TOML has syntax errors"
+type="module"
+
+[files
+"config.conf" = "~/.config/app/config.conf"
+
+[events.pre_install]
+install = "echo 'missing closing bracket above'"

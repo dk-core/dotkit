@@ -1,0 +1,4 @@
+name="minimal-profile"
+version="0.1.0"
+description="A minimal profile with just metadata"
+type="profile"

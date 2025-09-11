@@ -1,0 +1,14 @@
+name="simple-dotfile"
+version="1.0.0"
+description="A simple dotfile configuration"
+type="dotfile"
+
+[files]
+".zshrc" = "~/.zshrc"
+".tmux.conf" = "~/.tmux.conf"
+
+[events.pre_install]
+backup = "cp ~/.zshrc ~/.zshrc.backup"
+
+[events.post_install]
+reload = "source ~/.zshrc"
