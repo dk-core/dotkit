@@ -10,7 +10,7 @@
 
 done:
 
-- feat(events): added preliminary install events, fixed duplicate bug
+- feat(event): dk emit self calls dk_load_events for convenience
 
 next:
 

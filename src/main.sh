@@ -54,6 +54,8 @@ case "$command" in
   error)
     dk_install_error
     ;;
+  source)
+    ;;
   *)
     if [[ -n "$command" ]]; then
       echo "Unknown command: $command" >&2
