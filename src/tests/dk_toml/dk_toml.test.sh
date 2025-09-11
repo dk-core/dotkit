@@ -401,15 +401,31 @@ test_dk_toml_load_all_with_100_modules() {
         cp "$TEST_FIXTURES_DIR/stress_test_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
     done
     
+    # Time only the loading operation to match benchmark methodology
+    dk_toml_load_all >/dev/null 2>&1
+    assert_equals 0 "$?"
+}
+
+# Separate verification test for 100 modules functionality
+test_dk_toml_load_all_with_100_modules_verification() {
+    local i
+    
+    # Copy pre-created fixtures
+    for i in $(seq 1 100); do
+        mkdir -p "$DK_DOTFILE/modules/mod$i"
+        cp "$TEST_FIXTURES_DIR/stress_test_$i.toml" "$DK_DOTFILE/modules/mod$i/dotkit.toml"
+    done
+    
+    # Load all files
     dk_toml_load_all >/dev/null 2>&1
     assert_equals 0 "$?"
     
-    # Verify all files were processed
+    # Verify all files were processed (not timed)
     local count
     count=$(dk_toml_count_files)
     assert_equals 100 "$count"
     
-    # Verify metadata was extracted for all files
+    # Verify metadata was extracted for all files (not timed)
     local -a all_metadata
     mapfile -t all_metadata < <(dk_toml_get_all_metadata)
     assert_equals 100 "${#all_metadata[@]}"

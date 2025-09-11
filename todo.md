@@ -12,6 +12,7 @@ done:
 
 next:
 
+
 - make a lib/commands for all commands of dotkit, all possible outputs of the command and flags should be handled in said file(s)
 
 - refactor: rename dotfiles to bundles. bundles and modules seem alright
@@ -25,9 +26,6 @@ next:
 - add envs to dk_global.sh (dry, force)
 - dk_link handles dry and force envs
 
-- toml: implement core toml parsing functions
-- toml: validation `dk_toml_validate`
-
 - events: toml loading for events as a user friendly alternative to the dk_events.sh file
 - events: add handling for dotkit native events, pre/post install/set/update
   
@@ -40,12 +38,13 @@ next:
 
 notes:
 
+- toml: 100 modules is 472ms, 100 modules with validation is 733ms
+  - making a state file for dotkit will improve this, i can store a hash of the files and only load if the hash changes
+  - this state file can be used for other things too, should be part of a bigger strategy
+
 - events
   - events hold variables, eg _DK_POSTINSTALL_LINKS
   - everything that should be globally registered should be an event
-toml:
-- tomlq  
-- something like `mapfile -t modules < <(tomlq -r '.files' */dotkit.toml)` to batch process a files array for example
 
 docs:
 
