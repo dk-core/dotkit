@@ -116,6 +116,51 @@ dk_toml_extract_single_pass() {
     return 0
 }
 
+# Parallel processing helper function
+dk_toml_extract_single_pass_parallel() {
+    local toml_file="$1"
+    
+    # Single yq call to extract all data at once in a parseable format
+    local extraction_result
+    extraction_result=$(yq -p toml -o tsv '{
+        "name": .name,
+        "version": .version // "null",
+        "description": .description // "null", 
+        "type": .type,
+        "files": (.files // {} | to_entries | map(.key + "|" + .value) | join(";")),
+        "events": (.events // {} | to_entries | map(.key as $type | .value | to_entries | map($type + "|" + .key + "=" + .value)) | flatten | join(";"))
+    } | [.name, .version, .description, .type, .files, .events] | @tsv' "$toml_file" 2>/dev/null)
+    
+    if [[ $? -ne 0 || -z "$extraction_result" ]]; then
+        echo "ERROR:$toml_file:Invalid TOML syntax"
+        return 1
+    fi
+    
+    # Parse the TSV result (tab-separated values)
+    local name version description type files events
+    IFS=$'\t' read -r name version description type files events <<< "$extraction_result"
+    
+    # Validate required fields
+    if [[ -z "$name" || "$name" == "null" ]]; then
+        echo "ERROR:$toml_file:Missing required field 'name'"
+        return 1
+    fi
+    
+    if [[ -z "$type" || "$type" == "null" ]]; then
+        echo "ERROR:$toml_file:Missing required field 'type'"
+        return 1
+    fi
+    
+    # Validate type field values
+    if [[ ! "$type" =~ ^(module|dotfile|profile)$ ]]; then
+        echo "WARNING:$toml_file:Unknown type '$type' (expected: module, dotfile, profile)"
+    fi
+    
+    # Output structured result for parent process to parse
+    echo "SUCCESS:$toml_file:$name:$version:$description:$type:$files:$events"
+    return 0
+}
+
 # Batch Processing Functions
 dk_toml_load_all() {
     dk_debug "Starting optimized batch TOML processing"
@@ -140,11 +185,18 @@ dk_toml_load_all() {
         return 0
     fi
     
-    # Process all files using optimized single-pass extraction
-    local toml_file
-    for toml_file in "${toml_files[@]}"; do
-        dk_toml_extract_single_pass "$toml_file"
-    done
+    # Choose processing method based on file count and parallel availability
+    if [[ ${#toml_files[@]} -ge 10 ]] && command -v parallel >/dev/null 2>&1; then
+        dk_debug "Using parallel processing for ${#toml_files[@]} files"
+        dk_toml_load_all_parallel "${toml_files[@]}"
+    else
+        dk_debug "Using sequential processing for ${#toml_files[@]} files"
+        # Process all files using optimized single-pass extraction
+        local toml_file
+        for toml_file in "${toml_files[@]}"; do
+            dk_toml_extract_single_pass "$toml_file"
+        done
+    fi
     
     # If validation errors exist, report and exit
     if [[ ${#_DK_TOML_ERRORS[@]} -gt 0 ]]; then
@@ -159,6 +211,56 @@ dk_toml_load_all() {
     
     dk_debug "Optimized batch TOML processing completed successfully"
     return 0
+}
+
+# Parallel processing implementation
+dk_toml_load_all_parallel() {
+    local toml_files=("$@")
+    
+    dk_debug "Processing ${#toml_files[@]} files in parallel"
+    
+    # Export the function so parallel can use it
+    export -f dk_toml_extract_single_pass_parallel
+    
+    # Process files in parallel and collect results
+    local parallel_results
+    parallel_results=$(printf '%s\n' "${toml_files[@]}" | parallel -j+0 dk_toml_extract_single_pass_parallel)
+    
+    # Parse parallel results
+    local line
+    while IFS= read -r line; do
+        if [[ -z "$line" ]]; then
+            continue
+        fi
+        
+        local status toml_file name version description type files events
+        IFS=':' read -r status toml_file name version description type files events <<< "$line"
+        
+        case "$status" in
+            "SUCCESS")
+                # Store extracted data
+                _DK_TOML_METADATA["$toml_file"]="name=$name|version=$version|description=$description|type=$type"
+                
+                if [[ -n "$files" && "$files" != "null" ]]; then
+                    _DK_TOML_FILES["$toml_file"]="$files"
+                fi
+                
+                if [[ -n "$events" && "$events" != "null" ]]; then
+                    _DK_TOML_EVENTS["$toml_file"]="$events"
+                fi
+                
+                dk_debug "Parallel extraction completed for $toml_file: name=$name, type=$type"
+                ;;
+            "ERROR")
+                _DK_TOML_ERRORS+=("$name in $toml_file")
+                dk_error "$name in $toml_file"
+                ;;
+            "WARNING")
+                _DK_TOML_WARNINGS+=("$name in $toml_file")
+                dk_warn "$name in $toml_file"
+                ;;
+        esac
+    done <<< "$parallel_results"
 }
 
 dk_toml_batch_validate() {
