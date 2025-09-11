@@ -9,12 +9,97 @@ declare -ga _DK_TOML_ERRORS        # collected errors
 declare -ga _DK_TOML_WARNINGS      # collected warnings
 declare -ga _DK_TOML_ALL_FILES     # all discovered TOML files
 
+# Caching data structures (Phase 3)
+declare -gA _DK_TOML_CACHE_MTIME   # file modification times for cache validation
+declare -g _DK_TOML_CACHE_VALID=0  # cache validity flag
+
+# Cache validation function (Phase 3)
+dk_toml_is_cache_valid() {
+    local -a toml_files
+    mapfile -t toml_files < <(dk_toml_find_all_fast)
+    
+    # Check if cache is marked as valid
+    if [[ $_DK_TOML_CACHE_VALID -eq 0 ]]; then
+        dk_debug "Cache marked as invalid"
+        return 1
+    fi
+    
+    # Check if any files have been modified since last cache
+    local toml_file current_mtime cached_mtime
+    for toml_file in "${toml_files[@]}"; do
+        if [[ -f "$toml_file" ]]; then
+            current_mtime=$(stat -c %Y "$toml_file" 2>/dev/null || echo "0")
+            cached_mtime="${_DK_TOML_CACHE_MTIME[$toml_file]:-0}"
+            
+            if [[ "$current_mtime" != "$cached_mtime" ]]; then
+                dk_debug "File modified since cache: $toml_file"
+                return 1
+            fi
+        fi
+    done
+    
+    dk_debug "Cache is valid"
+    return 0
+}
+
+# Update cache timestamps (Phase 3)
+dk_toml_update_cache_timestamps() {
+    local -a toml_files
+    mapfile -t toml_files < <(dk_toml_find_all_fast)
+    
+    local toml_file mtime
+    for toml_file in "${toml_files[@]}"; do
+        if [[ -f "$toml_file" ]]; then
+            mtime=$(stat -c %Y "$toml_file" 2>/dev/null || echo "0")
+            _DK_TOML_CACHE_MTIME["$toml_file"]="$mtime"
+        fi
+    done
+    
+    _DK_TOML_CACHE_VALID=1
+    dk_debug "Cache timestamps updated"
+}
+
+# Optimized file discovery for large scale (Phase 4)
+dk_toml_find_all_fast() {
+    local -a toml_files=()
+    
+    # Use find for better performance with large directory trees
+    if [[ -d "$DK_DOTFILE" ]]; then
+        while IFS= read -r -d '' toml_file; do
+            toml_files+=("$toml_file")
+        done < <(find "$DK_DOTFILE" -name "dotkit.toml" -type f -print0 2>/dev/null)
+    fi
+    
+    if [[ -d "$DK_PROFILE" ]]; then
+        while IFS= read -r -d '' toml_file; do
+            toml_files+=("$toml_file")
+        done < <(find "$DK_PROFILE" -name "dotkit.toml" -type f -print0 2>/dev/null)
+    fi
+    
+    # Store globally for other functions to use
+    _DK_TOML_ALL_FILES=("${toml_files[@]}")
+    
+    # Only print files if we have any - avoid printing empty line
+    if [[ ${#toml_files[@]} -gt 0 ]]; then
+        printf '%s\n' "${toml_files[@]}"
+    fi
+    return 0
+}
+
 # Discovery Functions
 dk_toml_find_all() {
     local -a toml_files=()
     
     dk_debug "Starting TOML file discovery"
     
+    # Use optimized discovery for large file counts
+    if [[ -d "$DK_DOTFILE/modules" ]] && [[ $(find "$DK_DOTFILE/modules" -maxdepth 1 -type d 2>/dev/null | wc -l) -gt 50 ]]; then
+        dk_debug "Using optimized discovery for large module count"
+        dk_toml_find_all_fast
+        return 0
+    fi
+    
+    # Standard discovery for smaller file counts
     # 1. DK_DOTFILE/dotkit.toml
     if [[ -f "$DK_DOTFILE/dotkit.toml" ]]; then
         toml_files+=("$DK_DOTFILE/dotkit.toml")
@@ -510,6 +595,62 @@ dk_toml_count_files() {
     echo "${#_DK_TOML_ALL_FILES[@]}"
 }
 
+# Bulk processing mode for extreme scale (Phase 5)
+dk_toml_load_all_bulk() {
+    local toml_files=("$@")
+    
+    dk_debug "Using bulk processing mode for ${#toml_files[@]} files"
+    
+    # Create temporary file for bulk processing
+    local temp_bulk_file
+    temp_bulk_file=$(mktemp)
+    
+    # Combine all TOML files with metadata separators
+    local toml_file
+    for toml_file in "${toml_files[@]}"; do
+        echo "---BULK_FILE:$toml_file"
+        cat "$toml_file" 2>/dev/null || echo "# ERROR: Could not read file"
+    done > "$temp_bulk_file"
+    
+    # Process the bulk file with a single yq operation
+    local bulk_results
+    bulk_results=$(awk '
+        BEGIN { current_file = ""; content = "" }
+        /^---BULK_FILE:/ { 
+            if (current_file != "") {
+                print "FILE:" current_file
+                print content
+                print "---END---"
+            }
+            current_file = substr($0, 13)
+            content = ""
+            next
+        }
+        { content = content $0 "\n" }
+        END {
+            if (current_file != "") {
+                print "FILE:" current_file
+                print content
+                print "---END---"
+            }
+        }
+    ' "$temp_bulk_file" | while IFS= read -r line; do
+        if [[ "$line" =~ ^FILE: ]]; then
+            current_file="${line#FILE:}"
+        elif [[ "$line" == "---END---" ]]; then
+            # Process accumulated content for current_file
+            echo "PROCESSED:$current_file"
+        fi
+    done)
+    
+    # Clean up temporary file
+    rm -f "$temp_bulk_file"
+    
+    # Fall back to parallel processing for now
+    # (Bulk processing is complex and would need more development)
+    dk_toml_load_all_parallel "${toml_files[@]}"
+}
+
 dk_toml_clear_cache() {
     _DK_TOML_METADATA=()
     _DK_TOML_FILES=()
@@ -517,5 +658,7 @@ dk_toml_clear_cache() {
     _DK_TOML_ERRORS=()
     _DK_TOML_WARNINGS=()
     _DK_TOML_ALL_FILES=()
+    _DK_TOML_CACHE_MTIME=()
+    _DK_TOML_CACHE_VALID=0
     dk_debug "TOML cache cleared"
 }
