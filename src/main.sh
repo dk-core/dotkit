@@ -14,7 +14,7 @@ dk_install_error() {
   subtitle=$(gum style --foreground "8" --align left --width 60 --margin "0 0 1 0" "support & contribute: https://github.com/dk-core/dotkit")
   echo "$header"
   echo "$subtitle"
-  gum progress --progress.foreground "#FF8C00" --title "Checking for install errors..." -- sleep 2
+  gum spin --spinner.foreground "#FF8C00" --title "Checking for install errors..." -- sleep 2
   # Hook conflicts (pseudo, with real conflict example)
   hook_conflicts=$(gum join --vertical \
     "$(gum style --foreground "#F0F0F0" "warning: hook conflicts - use --suppress to ignore")" \
@@ -43,6 +43,13 @@ dk_install_error() {
 case "$command" in
   version)
     echo "dotkit version $DOTKIT_VERSION"
+    ;;
+  install)
+
+    dk_load_events
+    dk_emit pre_install
+    dk_emit install
+    dk_emit post_install
     ;;
   error)
     dk_install_error

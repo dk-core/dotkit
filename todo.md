@@ -8,50 +8,51 @@
 
 ## scripts - 20%
 
-next commits:
+done:
 
-- rename dk_events to dk_events
-- events folder
+- feat(events): added preliminary install events, fixed duplicate bug
 
-- rename dotfiles to bundles. bundles and modules seem alright
+next:
 
-- dk_link
-  - `dk_link` infers type allows associative arrays as input additionally
-  - bring into the events system as noted in dk_events
-  - add env handling
+- make a lib/commands for all commands of dotkit, all possible outputs of the command and flags should be handled in said file(s)
 
-- add envs to dk_global.sh
-  - dry-run
-  - force / non-interactive
-- implement file system helpers (`dk_exists`, `dk_is_link`, `dk_link_source`)
+- refactor: rename dotfiles to bundles. bundles and modules seem alright
 
-- dk_toml
-  - tomlq  
-  - implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
-  - something like `mapfile -t modules < <(tomlq -r '.files' */dotkit.toml)` to batch process a files array for example
-  - implement file generation/scaffolding functions (`dk_generate_dotfile`, `dk_generate_profile`, `dk_generate_module`)
-  - toml validation `dk_profile_validate`, `dk_dotfile_validate`, `dk_module_validate`
-  - implement automatic module discovery and execution based on
+- link: part of events, this allows for a single event to link all files no matter how many times it is called
+- dk_link infers type allows associative arrays as input additionally
 
-- dk_events - integration with all functions
+- events: confirm dk functions can be called within events without sourcing, make a test for this
+- events: can you emit events within events? test case for this
+
+- add envs to dk_global.sh (dry, force)
+- dk_link handles dry and force envs
+
+- toml: implement core toml parsing functions (`dk_toml_get`, `dk_toml_get_table`)
+- toml: validation `dk_toml_validate`
+
+- events: toml loading for events as a user friendly alternative to the dk_events.sh file
+- events: add handling for dotkit native events, pre/post install/set/update
+  
+- init: make init scripts to generate modules, bundles, and profiles
+
+- chore: prefix all internal functions with _dk
+- logging: use bashunit logs by checking if the command exists for helpful logging messages during testing, add to debug logs
+- logging: journalctl logging more robust?
+- logging: trap ERR and provide source and stack trace
+
+notes:
+
+- events
   - events hold variables, eg _DK_POSTINSTALL_LINKS
-  - pre/post install/set/update
-    - pre install
-      - install packages
-    - post install
-      - validate links
-      - runs dk_link internally
-  - validate events
-  - add handling for dotkit native events, pre/post install/set/update
-  - add toml loading for events as a user friendly alternative to the dk_events.sh file
-  
-- dk_events
-  - validation limited overwrite on named events like install/set/update, warning
-  
-- dk-logging
-  - use bashunit logs by checking if the command exists for helpful logging messages during testing
-  - should be 1-1 with debug logs
-  - journalctl logging more robust?
+  - everything that should be globally registered should be an event
+toml:
+- tomlq  
+- something like `mapfile -t modules < <(tomlq -r '.files' */dotkit.toml)` to batch process a files array for example
+
+docs:
+
+- bundles/modules/profiles definitions
+- ensure security concerns with the marketplace, create a T&C and security policy. EU compliant, etc.
 
 ## hello world + integration - 40%
 

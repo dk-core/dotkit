@@ -2,6 +2,11 @@
 
 DK_LIB="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
+# TODO: remove hardcoded dotfile/profile paths
+DK_DOTFILE="$HOME/.config/dotkit/dotfiles/testdotfile"
+DK_PROFILE="$HOME/.config/dotkit/profiles/testprofile"
+export DK_DOTFILE DK_PROFILE
+
 ### --- Globals ---
 
 # dotkit version
@@ -17,5 +22,6 @@ source "$DK_LIB/dk_events.sh"
 # shellcheck source=/dk_link.sh
 source "$DK_LIB/dk_link.sh"
 
-### --- Commands ---
+### --- Events ---
 
+# Manually source event scripts

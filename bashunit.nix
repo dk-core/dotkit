@@ -44,6 +44,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
+  # bashunit expects benchmark.sh to be in ../src/ relative to the bashunit binary
   postInstall = ''
     substituteInPlace $out/bin/bashunit \
       --replace-fail '/src/benchmark.sh' '/../libexec/bashunit/src/benchmark.sh'

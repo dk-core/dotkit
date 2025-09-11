@@ -1,3 +1,2 @@
-# Tell ShellCheck where to look for sourced files
 external-sources=true
 source-path=src
